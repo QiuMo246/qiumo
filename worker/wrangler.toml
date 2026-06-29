@@ -1,0 +1,13 @@
+name = "qiumo-comments"
+main = "src/index.js"
+compatibility_date = "2026-06-27"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "qiumo-comments"
+database_id = "05475b7d-81a7-4c57-a944-981cb75ef63e"  # 运行 wrangler d1 create 后填入
+
+[vars]
+CORS_ORIGIN = "*"  # 替换为你的域名
+ADMIN_SECRET = "Qiumo_2026_x83jd82K_9LmP"   # 替换为随机生成的密钥
+AUTHOR_NAME = "秋末"                      # 作者昵称，显示"作者"标签

@@ -1,0 +1,768 @@
+/* ============================================
+   留言板样式 - guestbook.css
+   依赖 styles.css 中的 CSS 变量
+   ============================================ */
+
+/* ---- 表单 ---- */
+.gb-form {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 32px;
+    margin-bottom: 40px;
+    position: relative;
+}
+
+.gb-form::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-lg);
+    padding: 1px;
+    background: var(--gradient-border);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+}
+
+.gb-form:focus-within::before {
+    opacity: 1;
+}
+
+.gb-form-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.gb-form .form-group {
+    position: relative;
+    flex: 1;
+}
+
+.gb-form textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+/* ---- 工具栏 ---- */
+.gb-form-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 8px;
+}
+
+.gb-toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.gb-tool-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: transparent;
+    color: var(--text-tertiary);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.gb-tool-btn:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.gb-char-count {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+/* ---- 提交按钮状态 ---- */
+.gb-submit {
+    width: 100%;
+    margin-top: 16px;
+    position: relative;
+    overflow: hidden;
+}
+
+.gb-submit .btn-loading {
+    display: none;
+}
+
+.gb-submit.loading .btn-text { display: none; }
+.gb-submit.loading .btn-loading { display: flex; align-items: center; justify-content: center; }
+.gb-submit.loading .btn-success { display: none; }
+.gb-submit.success .btn-text { display: none; }
+.gb-submit.success .btn-loading { display: none; }
+.gb-submit.success .btn-success { display: flex; align-items: center; justify-content: center; }
+
+.gb-submit .spinner {
+    width: 20px;
+    height: 20px;
+    animation: spin 0.8s linear infinite;
+}
+
+.gb-submit .btn-success {
+    display: none;
+    color: #22c55e;
+}
+
+/* ---- 排序工具栏 ---- */
+.gb-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.gb-sort-btn {
+    padding: 8px 20px;
+    border: none;
+    background: transparent;
+    color: var(--text-tertiary);
+    font-size: 0.9rem;
+    font-family: var(--font-sans);
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: all 0.3s var(--ease-out);
+    position: relative;
+}
+
+.gb-sort-btn:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.gb-sort-btn.active {
+    color: #fff;
+    background: var(--gradient-primary);
+    background-size: 150% 150%;
+    animation: gradient-shift 3s ease infinite;
+}
+
+.gb-count {
+    margin-left: auto;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+}
+
+/* ---- 评论卡片 ---- */
+.gb-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-height: 200px;
+}
+
+.gb-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    transition: all 0.3s var(--ease-out);
+    animation: gb-fade-in 0.5s var(--ease-out);
+}
+
+.gb-card:hover {
+    border-color: var(--border-color-hover);
+    background: var(--bg-card-hover, #1a1a1f);
+}
+
+.gb-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.gb-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-full);
+    background: rgba(99, 102, 241, 0.15);
+    color: var(--accent-blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+}
+
+.gb-card-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.gb-nickname {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.gb-author-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 8px;
+    font-size: 0.65rem;
+    font-weight: 500;
+    color: #fff;
+    background: var(--gradient-primary);
+    border-radius: var(--radius-full);
+    letter-spacing: 0.02em;
+}
+
+.gb-time {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+}
+
+.gb-card-body {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    line-height: 1.7;
+    margin-bottom: 12px;
+    word-break: break-word;
+}
+
+.gb-card-body p {
+    margin: 0 0 8px 0;
+}
+
+.gb-card-body p:last-child {
+    margin-bottom: 0;
+}
+
+.gb-card-body strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.gb-card-body em {
+    font-style: italic;
+}
+
+.gb-card-body del {
+    color: var(--text-muted);
+}
+
+.gb-card-body a {
+    color: var(--accent-blue);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s ease;
+}
+
+.gb-card-body a:hover {
+    border-bottom-color: var(--accent-blue);
+}
+
+.gb-card-body .gb-inline-code {
+    background: rgba(99, 102, 241, 0.12);
+    color: var(--accent-blue);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+}
+
+.gb-card-body .gb-code-block {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 12px 16px;
+    margin: 8px 0;
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+.gb-card-body .gb-code-block code {
+    background: none;
+    padding: 0;
+}
+
+.gb-card-body .gb-md-list {
+    margin: 8px 0;
+    padding-left: 24px;
+}
+
+.gb-card-body .gb-md-list li {
+    margin: 4px 0;
+}
+
+.gb-card-body .gb-md-image {
+    color: var(--text-muted);
+    font-size: 0.85em;
+    font-family: var(--font-mono);
+}
+
+/* ---- 操作按钮 ---- */
+.gb-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.gb-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-family: var(--font-sans);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.gb-action-btn:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.gb-action-btn.liked {
+    color: #ec4899;
+}
+
+.gb-action-btn.liked:hover {
+    background: rgba(236, 72, 153, 0.1);
+}
+
+.gb-delete-btn:hover {
+    color: #ef4444 !important;
+    background: rgba(239, 68, 68, 0.1) !important;
+}
+
+/* ---- 回复区 ---- */
+.gb-replies {
+    margin-top: 16px;
+    padding-left: 20px;
+    border-left: 2px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.gb-reply-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 16px;
+}
+
+.gb-reply-card:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.gb-reply-card .gb-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 0.8rem;
+}
+
+.gb-show-more-replies {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 0;
+    border: none;
+    background: none;
+    color: var(--accent-blue);
+    font-size: 0.85rem;
+    font-family: var(--font-sans);
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+}
+
+.gb-show-more-replies:hover {
+    opacity: 0.8;
+}
+
+/* ---- 回复提示 ---- */
+.gb-reply-indicator {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    background: rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    animation: gb-fade-in 0.3s ease;
+}
+
+.gb-reply-cancel {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-secondary);
+    border-radius: var(--radius-sm);
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.gb-reply-cancel:hover {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}
+
+/* ---- 加载更多 ---- */
+.gb-load-more {
+    text-align: center;
+    margin-top: 32px;
+}
+
+.gb-load-more .btn {
+    padding: 12px 32px;
+}
+
+/* ---- 空状态 ---- */
+.gb-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+    gap: 16px;
+}
+
+.gb-empty svg {
+    opacity: 0.3;
+}
+
+.gb-empty p {
+    font-size: 0.95rem;
+}
+
+/* ---- Skeleton Loading ---- */
+.gb-skeleton-card {
+    pointer-events: none;
+}
+
+.gb-skeleton {
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.04) 25%,
+        rgba(255, 255, 255, 0.08) 50%,
+        rgba(255, 255, 255, 0.04) 75%
+    );
+    background-size: 200% 100%;
+    animation: gb-shimmer 1.5s infinite;
+    border-radius: 6px;
+}
+
+.gb-skeleton-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.gb-skeleton-line {
+    height: 14px;
+    border-radius: 4px;
+}
+
+/* ---- Emoji Picker ---- */
+.gb-emoji-picker {
+    margin-top: 8px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    animation: gb-fade-in 0.2s ease;
+}
+
+.gb-emoji-grid {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.gb-emoji-grid::-webkit-scrollbar {
+    width: 4px;
+}
+
+.gb-emoji-grid::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.gb-emoji-grid::-webkit-scrollbar-thumb {
+    background: var(--text-muted);
+    border-radius: 2px;
+}
+
+.gb-emoji-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 1.25rem;
+    transition: all 0.15s ease;
+}
+
+.gb-emoji-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: scale(1.2);
+}
+
+/* ---- Markdown 预览 ---- */
+.gb-md-preview {
+    margin-top: 8px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    animation: gb-fade-in 0.2s ease;
+}
+
+.gb-md-preview-content {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    line-height: 1.7;
+}
+
+/* ---- 删除确认弹窗 ---- */
+.gb-confirm-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10001;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.gb-confirm-overlay.show {
+    opacity: 1;
+}
+
+.gb-confirm-modal {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 32px;
+    max-width: 400px;
+    width: 90%;
+    transform: scale(0.95) translateY(10px);
+    transition: transform 0.3s var(--ease-out);
+}
+
+.gb-confirm-overlay.show .gb-confirm-modal {
+    transform: scale(1) translateY(0);
+}
+
+.gb-confirm-modal h3 {
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+}
+
+.gb-confirm-modal p {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 24px;
+    line-height: 1.5;
+}
+
+.gb-confirm-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.gb-confirm-actions .btn {
+    padding: 10px 24px;
+    font-size: 0.9rem;
+}
+
+/* ---- 新评论动画 ---- */
+.gb-new {
+    animation: gb-slide-in 0.5s var(--ease-spring);
+}
+
+/* ---- 渐变动画 ---- */
+@keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* ---- 管理员栏 ---- */
+.gb-admin-bar {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border-color);
+}
+
+.gb-admin-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border: 1px solid var(--border-color);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-family: var(--font-sans);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.gb-admin-btn:hover {
+    color: var(--text-primary);
+    border-color: var(--border-color-hover);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+/* ---- Keyframes ---- */
+@keyframes gb-fade-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes gb-slide-in {
+    from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes gb-shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+/* ---- 响应式 ---- */
+@media (max-width: 768px) {
+    .gb-form {
+        padding: 24px 20px;
+    }
+
+    .gb-form-row {
+        flex-direction: column;
+        margin-bottom: 12px;
+    }
+
+    .gb-card {
+        padding: 20px 16px;
+    }
+
+    .gb-replies {
+        padding-left: 12px;
+    }
+
+    .gb-emoji-grid {
+        grid-template-columns: repeat(8, 1fr);
+    }
+
+    .gb-toolbar {
+        flex-wrap: wrap;
+    }
+}
+
+@media (max-width: 480px) {
+    .gb-form {
+        padding: 20px 16px;
+    }
+
+    .gb-card-header {
+        gap: 10px;
+    }
+
+    .gb-avatar {
+        width: 36px;
+        height: 36px;
+        font-size: 0.85rem;
+    }
+
+    .gb-card-actions {
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    .gb-action-btn {
+        padding: 6px 8px;
+        font-size: 0.75rem;
+    }
+
+    .gb-emoji-grid {
+        grid-template-columns: repeat(7, 1fr);
+    }
+
+    .gb-emoji-item {
+        width: 32px;
+        height: 32px;
+        font-size: 1.1rem;
+    }
+}
+
+/* ---- Reduced Motion ---- */
+@media (prefers-reduced-motion: reduce) {
+    .gb-card,
+    .gb-new,
+    .gb-confirm-overlay,
+    .gb-confirm-modal,
+    .gb-reply-indicator,
+    .gb-emoji-picker,
+    .gb-md-preview {
+        animation: none !important;
+        transition: none !important;
+    }
+
+    .gb-skeleton {
+        animation: none !important;
+    }
+
+    .gb-sort-btn.active {
+        animation: none !important;
+    }
+}
