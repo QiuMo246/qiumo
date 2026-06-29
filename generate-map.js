@@ -1,41 +1,41 @@
-const fs = require("fs");
-const path = require("path");
+{
+  "project": "web-by-claude",
 
-const IGNORE = [
-  "node_modules",
-  ".git",
-  ".wrangler",
-  "dist",
-  ".DS_Store"
-];
+  "frontend": {
+    "index.html": "main page",
+    "script.js": "ui logic + event handling",
+    "styles.css": "global styles"
+  },
 
-function walk(dir) {
-  const result = {};
+  "components": {
+    "music-player/": "music player module"
+  },
 
-  fs.readdirSync(dir).forEach(file => {
-    if (IGNORE.includes(file)) return;
-
-    const fullPath = path.join(dir, file);
-    const stat = fs.statSync(fullPath);
-
-    if (stat.isDirectory()) {
-      result[file + "/"] = walk(fullPath);
-    } else {
-      result[file] = {
-        size: stat.size,
-        type: "file"
-      };
+  "features": {
+    "guestbook": {
+      "frontend": "guestbook/",
+      "backend": "worker/src/"
     }
-  });
+  },
 
-  return result;
+  "backend": {
+    "worker/": "cloudflare worker api"
+  },
+
+  "assets": {
+    "music/": "audio resources (ignored in AI logic)"
+  },
+
+  "ai_system": {
+    "generate-map.js": "auto index generator",
+    "generate-diff.js": "git diff extractor",
+    "generate-context.js": "ai context builder"
+  },
+
+  "rules": {
+    "never_load_full_project": true,
+    "only_use_diff_or_file": true,
+    "ignore_assets": true,
+    "ignore_node_modules": true
+  }
 }
-
-const tree = walk(process.cwd());
-
-fs.writeFileSync(
-  "ai-project-map.json",
-  JSON.stringify(tree, null, 2)
-);
-
-console.log("✔ AI 项目索引已生成");
