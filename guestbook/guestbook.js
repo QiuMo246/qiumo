@@ -6,7 +6,7 @@
     'use strict';
 
     // ---- 配置 ----
-    const API_BASE = 'https://your-worker.workers.dev'; // 替换为你的 Worker URL
+    const API_BASE = 'https://qiumo-comments.moqiu846.workers.dev';
     const PAGE_SIZE = 10;
     const CLIENT_ID_KEY = 'gb_client_id';
     const TOKEN_PREFIX = 'gb_token_';
