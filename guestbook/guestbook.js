@@ -11,6 +11,12 @@
     const CLIENT_ID_KEY = 'gb_client_id';
     const TOKEN_PREFIX = 'gb_token_';
     const NICKNAME_KEY = 'gb_nickname';
+    const PENDING_KEY = 'gb_pending_comments';
+    const FAILED_KEY = 'gb_failed_comments';
+
+    const TIMEOUT_MS = 15000;       // 请求超时 15s
+    const MAX_RETRIES = 3;          // 最大重试次数
+    const RETRY_BASE_DELAY = 1000;  // 首次重试延迟 1s
 
     // ---- 工具函数 ----
     const $ = (sel, ctx = document) => ctx.querySelector(sel);
@@ -65,6 +71,151 @@
         return !!getToken(comment.id);
     }
 
+    // ---- 带超时的 fetch ----
+    function fetchWithTimeout(url, options = {}, timeoutMs = TIMEOUT_MS) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeoutMs);
+        return fetch(url, { ...options, signal: controller.signal })
+            .finally(() => clearTimeout(timer));
+    }
+
+    // ---- 自动重试 + 指数退避 ----
+    async function retryFetch(url, options = {}, retries = MAX_RETRIES, retryDelay = RETRY_BASE_DELAY) {
+        let lastErr;
+        for (let attempt = 0; attempt <= retries; attempt++) {
+            try {
+                const res = await fetchWithTimeout(url, options);
+                return res;
+            } catch (err) {
+                lastErr = err;
+                // 最后一次不再等待，直接抛出
+                if (attempt >= retries) break;
+                // AbortError（超时）或网络错误才重试；HTTP 4xx/5xx 不重试
+                if (err.name === 'AbortError' || err.message === 'Failed to fetch' || err.type === 'dns') {
+                    const delay = retryDelay * Math.pow(2, attempt);
+                    console.warn(`[guestbook] 请求失败 (${attempt + 1}/${retries}), ${delay}ms 后重试:`, err.message);
+                    await new Promise(r => setTimeout(r, delay));
+                } else {
+                    // 其他错误（如 JSON 解析错误）不重试
+                    throw err;
+                }
+            }
+        }
+        throw lastErr;
+    }
+
+    // ---- 网络状态检测 ----
+    let isOnline = navigator.onLine;
+    const onlineListeners = [];
+
+    function initNetworkListeners() {
+        window.addEventListener('online', () => {
+            isOnline = true;
+            console.log('[guestbook] 网络已恢复');
+            // 网络恢复后自动同步未发送的评论
+            syncPendingComments();
+            onlineListeners.forEach(fn => fn(true));
+        });
+        window.addEventListener('offline', () => {
+            isOnline = false;
+            console.log('[guestbook] 网络已断开');
+            showToast('网络已断开，评论将暂存至本地，恢复后自动提交', 'info');
+            onlineListeners.forEach(fn => fn(false));
+        });
+    }
+
+    function onOnlineChange(fn) {
+        onlineListeners.push(fn);
+    }
+
+    // ---- 离线缓存管理 ----
+    function getPendingComments() {
+        try {
+            return JSON.parse(localStorage.getItem(PENDING_KEY)) || [];
+        } catch {
+            return [];
+        }
+    }
+
+    function savePendingComments(comments) {
+        localStorage.setItem(PENDING_KEY, JSON.stringify(comments));
+    }
+
+    function addPendingComment(comment) {
+        const pending = getPendingComments();
+        pending.push({ ...comment, _queuedAt: Date.now() });
+        savePendingComments(pending);
+    }
+
+    function removePendingComment(index) {
+        const pending = getPendingComments();
+        pending.splice(index, 1);
+        savePendingComments(pending);
+    }
+
+    async function syncPendingComments() {
+        const pending = getPendingComments();
+        if (pending.length === 0) return;
+
+        showToast(`正在同步 ${pending.length} 条待发送的评论...`, 'info');
+
+        for (let i = pending.length - 1; i >= 0; i--) {
+            const item = pending[i];
+            try {
+                const res = await retryFetch(`${API_BASE}/api/comments`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        nickname: item.nickname,
+                        content: item.content,
+                        parent_id: item.parentId || null,
+                    }),
+                }, 2); // 同步时最多重试 2 次
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || '提交失败');
+
+                storeToken(data.id, data.token);
+                removePendingComment(i);
+
+                // 将同步成功的评论插入列表顶部
+                if (Guestbook && Guestbook.listEl) {
+                    const newComment = {
+                        id: data.id,
+                        nickname: data.nickname,
+                        content: data.content,
+                        likes: 0,
+                        created_at: data.created_at,
+                        replies: [],
+                        reply_count: 0,
+                    };
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = renderComment(newComment);
+                    const card = tempDiv.firstElementChild;
+                    if (card) {
+                        card.classList.add('gb-new');
+                        Guestbook.listEl.prepend(card);
+                    }
+                }
+            } catch (err) {
+                console.warn('[guestbook] 同步失败，保留待发送:', item.content.slice(0, 20));
+            }
+        }
+
+        const remaining = getPendingComments();
+        if (remaining.length === 0) {
+            showToast('全部评论已同步成功 🎉', 'success');
+        }
+    }
+
+    // ---- 友好的错误消息 ----
+    function getErrorMessage(err, fallback = '操作失败') {
+        if (err.name === 'AbortError') return '请求超时，请检查网络后重试';
+        if (err.message === 'Failed to fetch' || err.type === 'dns' || !navigator.onLine) {
+            return '网络连接异常，评论已暂存至本地，恢复网络后将自动提交';
+        }
+        return err.message || fallback;
+    }
+
     // ---- Toast（复用 script.js 模式） ----
     function showToast(message, type = 'info') {
         const container = $('#toastContainer');
@@ -87,24 +238,24 @@
         }, 3500);
     }
 
-    // ---- API 客户端 ----
+    // ---- API 客户端（增强版） ----
     const API = {
         async getComments(sort, cursor) {
             let url = `${API_BASE}/api/comments?sort=${sort}&limit=${PAGE_SIZE}`;
             if (cursor) url += `&cursor=${encodeURIComponent(cursor)}`;
-            const res = await fetch(url);
+            const res = await retryFetch(url);
             if (!res.ok) throw new Error('加载失败');
             return res.json();
         },
 
         async getReplies(parentId) {
-            const res = await fetch(`${API_BASE}/api/comments?parent_id=${parentId}`);
+            const res = await retryFetch(`${API_BASE}/api/comments?parent_id=${parentId}`);
             if (!res.ok) throw new Error('加载回复失败');
             return res.json();
         },
 
         async createComment(nickname, content, parentId = null) {
-            const res = await fetch(`${API_BASE}/api/comments`, {
+            const res = await retryFetch(`${API_BASE}/api/comments`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ nickname, content, parent_id: parentId }),
@@ -115,7 +266,7 @@
         },
 
         async deleteComment(id, token) {
-            const res = await fetch(`${API_BASE}/api/comments/${id}`, {
+            const res = await retryFetch(`${API_BASE}/api/comments/${id}`, {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ token }),
@@ -127,7 +278,7 @@
 
         async toggleLike(id) {
             const clientId = getOrCreateClientId();
-            const res = await fetch(`${API_BASE}/api/comments/${id}/like`, {
+            const res = await retryFetch(`${API_BASE}/api/comments/${id}/like`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ client_id: clientId }),
@@ -167,7 +318,7 @@
     function renderComment(comment, isReply = false) {
         const own = isOwnComment(comment);
         const initial = (comment.nickname || '?')[0];
-        const authorName = '秋末'; // 与 wrangler.toml 中的 AUTHOR_NAME 一致
+        const authorName = '秋末';
         const isAuthor = comment.nickname === authorName;
         const likedKey = `gb_liked_${comment.id}`;
         const hasLiked = localStorage.getItem(likedKey) === '1';
@@ -261,6 +412,9 @@
             this.emojiPickerEl = $('#gb-emoji-picker');
 
             if (!this.listEl) return;
+
+            // 初始化网络状态监听
+            initNetworkListeners();
 
             // 初始化 Emoji Picker
             if (this.emojiPickerEl && this.contentEl) {
@@ -378,15 +532,24 @@
             } catch (err) {
                 console.error('加载评论失败:', err);
                 if (reset) {
-                    this.listEl.innerHTML = `<div class="gb-empty"><p>加载失败，请检查网络后刷新页面</p></div>`;
+                    this.listEl.innerHTML = `
+                        <div class="gb-empty">
+                            <p>加载失败</p>
+                            <p style="font-size:0.8rem;color:var(--text-muted);margin-top:4px">
+                                ${getErrorMessage(err, '请检查网络后刷新页面')}
+                            </p>
+                            <button class="btn btn-primary" style="margin-top:16px" onclick="location.reload()">
+                                刷新页面
+                            </button>
+                        </div>`;
                 }
-                showToast('加载评论失败', 'error');
+                showToast(getErrorMessage(err, '加载评论失败'), 'error');
             } finally {
                 this.state.isLoading = false;
             }
         },
 
-        // ---- 提交评论 ----
+        // ---- 提交评论（增强版：离线缓存 + 自动同步） ----
         async submitComment() {
             if (this.state.submitting) return;
 
@@ -433,7 +596,6 @@
                 if (this.state.sort === 'latest') {
                     this.listEl.prepend(card);
                 } else {
-                    // 热门排序下，新评论（0赞）放最后
                     this.listEl.appendChild(card);
                 }
 
@@ -441,7 +603,7 @@
                 this.countEl.textContent = `${this.state.total} 条留言`;
                 showToast('留言发表成功 🎉', 'success');
 
-                // 成功动画
+                // 成功后恢复按钮状态
                 this.submitBtn.classList.remove('loading');
                 this.submitBtn.classList.add('success');
                 setTimeout(() => {
@@ -449,7 +611,24 @@
                 }, 1500);
 
             } catch (err) {
-                showToast(err.message || '提交失败，请稍后再试', 'error');
+                // ---- 离线 / 网络错误时缓存到本地 ----
+                const errorMsg = getErrorMessage(err, '提交失败');
+
+                if (err.name === 'AbortError' || err.message === 'Failed to fetch' || !navigator.onLine) {
+                    addPendingComment({
+                        nickname,
+                        content,
+                        parentId: this.state.replyingTo?.id || null,
+                    });
+                    showToast('评论已暂存至本地，网络恢复后自动提交 👍', 'info');
+                    // 清空表单，避免重复缓存
+                    this.contentEl.value = '';
+                    this.charCountEl.textContent = '0';
+                    this.cancelReply();
+                } else {
+                    showToast(errorMsg, 'error');
+                }
+
                 this.submitBtn.classList.remove('loading');
             } finally {
                 this.state.submitting = false;
@@ -533,7 +712,7 @@
                     this.countEl.textContent = `${this.state.total} 条留言`;
                     showToast('留言已删除', 'success');
                 } catch (err) {
-                    showToast(err.message || '删除失败', 'error');
+                    showToast(getErrorMessage(err, '删除失败'), 'error');
                 }
             });
         },
@@ -588,7 +767,7 @@
                     repliesContainer.insertAdjacentHTML('beforeend', renderComment(reply, true));
                 });
             } catch (err) {
-                showToast('加载回复失败', 'error');
+                showToast(getErrorMessage(err, '加载回复失败'), 'error');
                 btn.textContent = '重试';
                 btn.disabled = false;
             }

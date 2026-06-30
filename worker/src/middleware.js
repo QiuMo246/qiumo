@@ -18,8 +18,15 @@ export function corsHeaders(env) {
  * JSON 响应工具函数
  */
 export function jsonResponse(data, status = 200, env = null) {
-    const headers = { 'Content-Type': 'application/json; charset=utf-8' };
+    const headers = {
+        'Content-Type': 'application/json; charset=utf-8',
+        'X-Content-Type-Options': 'nosniff',
+    };
     if (env) Object.assign(headers, corsHeaders(env));
+    // GET 请求结果缓存 30s，减少重复请求
+    if (status === 200) {
+        headers['Cache-Control'] = 'public, max-age=30, s-maxage=60';
+    }
     return new Response(JSON.stringify(data), { status, headers });
 }
 
