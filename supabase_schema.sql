@@ -69,6 +69,20 @@ CREATE INDEX IF NOT EXISTS idx_posts_slug ON posts(slug);
 CREATE INDEX IF NOT EXISTS idx_posts_published ON posts(published, created_at DESC);
 
 -- ============================================
+-- 授权：service_role 需要有完整权限
+-- 后端 API 使用 service_role key 访问 Supabase
+-- ============================================
+
+GRANT USAGE ON SCHEMA public TO service_role;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO service_role;
+GRANT ALL ON ALL FUNCTIONS IN SCHEMA public TO service_role;
+
+-- 确保未来新建的表也自动授权
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO service_role;
+
+-- ============================================
 -- Row Level Security（RLS）策略
 -- 前端直连 Supabase 时需要 RLS
 -- ============================================
