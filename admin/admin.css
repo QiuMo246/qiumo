@@ -1,0 +1,178 @@
+/* ============================================
+   管理后台样式 - admin.css
+   ============================================ */
+
+.admin-wrapper {
+    max-width: 1000px;
+    margin: 0 auto;
+    min-height: 400px;
+}
+
+/* ---- 登录表单 ---- */
+.admin-login-card {
+    max-width: 400px;
+    margin: 80px auto;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 40px;
+    text-align: center;
+}
+
+.admin-login-card h3 {
+    font-size: 1.5rem;
+    margin-bottom: 24px;
+    font-weight: 800;
+}
+
+/* ---- 仪表盘 ---- */
+.admin-dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    animation: admin-fade-in 0.3s ease;
+}
+
+.admin-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.admin-nav {
+    display: flex;
+    gap: 8px;
+}
+
+.admin-nav-btn {
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+}
+
+.admin-nav-btn:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.admin-nav-btn.active {
+    color: #fff;
+    background: var(--gradient-primary);
+}
+
+/* ---- 列表与表格 ---- */
+.admin-content-area {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    overflow-x: auto;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 0.9rem;
+}
+
+.admin-table th,
+.admin-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.admin-table th {
+    font-weight: 600;
+    color: var(--text-tertiary);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.admin-table tr:last-child td {
+    border-bottom: none;
+}
+
+.admin-table tr:hover td {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+/* ---- 编辑器 ---- */
+.admin-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.admin-editor-row {
+    display: flex;
+    gap: 16px;
+}
+
+.admin-editor .form-group {
+    flex: 1;
+}
+
+.admin-editor-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    min-height: 400px;
+}
+
+.admin-editor-textarea {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    line-height: 1.6;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    resize: vertical;
+    outline: none;
+}
+
+.admin-editor-preview {
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.02);
+    overflow-y: auto;
+    color: var(--text-secondary);
+}
+
+.admin-editor-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+/* ---- 按钮变体 ---- */
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    border-radius: var(--radius-sm);
+}
+
+.btn-danger {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.btn-danger:hover {
+    background: #ef4444;
+    color: #fff;
+}
+
+@keyframes admin-fade-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}

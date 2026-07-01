@@ -271,6 +271,67 @@
   transform: scale(1.1);
 }
 
+/* Shuffle & Loop buttons */
+.mp-btn-shuffle,
+.mp-btn-loop {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--mp-text-muted);
+  transition: all 0.25s var(--mp-ease);
+  flex-shrink: 0;
+}
+
+.mp-btn-shuffle:hover,
+.mp-btn-loop:hover {
+  color: var(--mp-text-secondary);
+  background: rgba(255, 255, 255, 0.05);
+  transform: scale(1.1);
+}
+
+.mp-btn-shuffle:active,
+.mp-btn-loop:active {
+  transform: scale(0.9);
+}
+
+.mp-btn-shuffle.mp-active {
+  color: var(--mp-accent);
+  background: rgba(99, 102, 241, 0.1);
+}
+
+.mp-btn-loop.mp-active {
+  color: var(--mp-accent);
+  background: rgba(99, 102, 241, 0.1);
+}
+
+.mp-btn-loop.mp-loop-one {
+  position: relative;
+}
+
+.mp-btn-loop.mp-loop-one::after {
+  content: '1';
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  font-size: 0.5rem;
+  font-weight: 800;
+  background: var(--mp-accent);
+  color: #fff;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
 /* --- Volume Row --- */
 .mp-volume-row {
   display: flex;

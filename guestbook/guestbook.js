@@ -83,6 +83,7 @@
         localStorage.removeItem(TOKEN_PREFIX + commentId);
     }
     function isOwnComment(comment) {
+        if (localStorage.getItem('admin_token')) return true; // 管理员可以看到所有评论的删除按钮
         return !!getToken(comment.id);
     }
 
@@ -478,7 +479,20 @@
 
         // 删除评论（软删除，需要 token 验证）
         async deleteComment(id, token) {
-            // 读取数据库中的 token 验证
+            // 如果已登录管理员，调用后台删除接口
+            const adminToken = localStorage.getItem('admin_token');
+            if (adminToken) {
+                const res = await fetch(`/api/admin/comments?id=${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${adminToken}`
+                    }
+                });
+                if (!res.ok) throw new Error('管理员删除失败');
+                return { success: true };
+            }
+
+            // 普通用户使用自己的 token 校验删除
             const rows = await retryFetch(() =>
                 SB.select('comments', {
                     select: 'token',

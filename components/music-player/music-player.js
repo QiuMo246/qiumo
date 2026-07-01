@@ -52,6 +52,7 @@
         { title: '3dgirl没有爱', artist: 'from秋末', src: 'assets/music/3dgirl没有爱.mp3' },
         { title: '19-2000', artist: 'from虞CH', src: 'assets/music/19-2000.mp3' },
         { title: '烂泥', artist: 'from秋末', src: 'assets/music/烂泥.mp3' },
+        { title: '创口贴', artist: 'from秋末', src: 'assets/music/创口贴.mp3' },
       ],
     },
 
@@ -81,7 +82,9 @@
     instrumental: {
       name: '纯音乐',
       icon: '🎹',
-      tracks: [],
+      tracks: [
+        { title: '星际拓荒(南方见)', artist: 'from秋末', src: 'assets/music/星际拓荒(南方见).mp3' },
+      ],
     },
 
     /* --- (ﾟω´) --- */
@@ -113,6 +116,9 @@
   let isPlaying = false;
   let panelOpen = false;
   let seeking = false;
+  let shuffle = false;
+  let loopMode = 'all'; // 'all', 'one', 'none'
+  let lastVol = 0.7;
 
   /* ============================================
      DOM REFS
@@ -120,6 +126,7 @@
   let $root, $toggle, $panel, $title, $progressFill, $progressBar;
   let $timeNow, $timeTotal, $btnPrev, $btnPlay, $btnNext;
   let $volumeIcon, $volumeSlider, $playlistEl, $categoriesEl, $artistEl;
+  let $btnShuffle, $btnLoop;
 
   /* ============================================
      SVG ICONS
@@ -133,6 +140,8 @@
     volHigh: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 010 14.14"/><path d="M15.54 8.46a5 5 0 010 7.07"/></svg>',
     volLow: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 010 7.07"/></svg>',
     volMute: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>',
+    shuffle: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>',
+    loop: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>',
   };
 
   /* ============================================
@@ -161,6 +170,8 @@
         category: activeCategory,
         index: currentIndex,
         volume: volume,
+        shuffle: shuffle,
+        loopMode: loopMode,
       }));
     } catch (_) {}
   }
@@ -179,6 +190,12 @@
       }
       if (typeof s.volume === 'number' && s.volume >= 0 && s.volume <= 1) {
         volume = s.volume;
+      }
+      if (typeof s.shuffle === 'boolean') {
+        shuffle = s.shuffle;
+      }
+      if (s.loopMode === 'all' || s.loopMode === 'one' || s.loopMode === 'none') {
+        loopMode = s.loopMode;
       }
     } catch (_) {}
   }
@@ -269,9 +286,11 @@
 
         /* Controls */
         '<div class="mp-controls">' +
+          '<button class="mp-btn mp-btn-shuffle' + (shuffle ? ' mp-active' : '') + '" id="mp-btn-shuffle" aria-label="Shuffle">' + icons.shuffle + '</button>' +
           '<button class="mp-btn mp-btn-prev" id="mp-btn-prev" aria-label="Previous">' + icons.prev + '</button>' +
           '<button class="mp-btn mp-btn-play" id="mp-btn-play" aria-label="Play">' + icons.play + '</button>' +
           '<button class="mp-btn mp-btn-next" id="mp-btn-next" aria-label="Next">' + icons.next + '</button>' +
+          '<button class="mp-btn mp-btn-loop' + (loopMode !== 'all' ? ' mp-active' : '') + (loopMode === 'one' ? ' mp-loop-one' : '') + '" id="mp-btn-loop" aria-label="Loop">' + icons.loop + '</button>' +
         '</div>' +
 
         /* Volume */
@@ -313,6 +332,8 @@
     $volumeSlider  = el.querySelector('#mp-volume-slider');
     $categoriesEl  = el.querySelector('#mp-categories');
     $playlistEl    = el.querySelector('#mp-playlist');
+    $btnShuffle    = el.querySelector('#mp-btn-shuffle');
+    $btnLoop       = el.querySelector('#mp-btn-loop');
   }
 
   /* ============================================
@@ -329,7 +350,14 @@
 
     /* Update artist line */
     var $artist = $root.querySelector('#mp-artist');
-    if ($artist) $artist.textContent = CATEGORIES[activeCategory].name + ' · 正在播放';
+    if ($artist) {
+      var track = tracks[currentIndex];
+      if (track && track.artist) {
+        $artist.textContent = escapeHTML(track.artist) + ' · ' + escapeHTML(CATEGORIES[activeCategory].name);
+      } else {
+        $artist.textContent = escapeHTML(CATEGORIES[activeCategory].name);
+      }
+    }
 
     /* Rebuild list */
     var itemsHTML = buildPlaylistHTML();
@@ -359,6 +387,9 @@
   function updatePlayBtn() {
     $btnPlay.innerHTML = isPlaying ? icons.pause : icons.play;
     $toggle.classList.toggle('mp-playing', isPlaying);
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
+    }
   }
 
   function updateProgress() {
@@ -394,6 +425,26 @@
     });
   }
 
+  function scrollToActiveTrack() {
+    var active = $playlistEl.querySelector('.mp-playlist-item.mp-active');
+    if (active) {
+      active.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  }
+
+  function updateMediaSession() {
+    if (!('mediaSession' in navigator)) return;
+    var tracks = getTracks();
+    var track = tracks[currentIndex];
+    if (track) {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: track.title,
+        artist: track.artist || CATEGORIES[activeCategory].name,
+        album: CATEGORIES[activeCategory].name,
+      });
+    }
+  }
+
   /* ============================================
      AUDIO LOGIC
      ============================================ */
@@ -406,6 +457,8 @@
     audio.load();
     updateTitle();
     highlightPlaylist();
+    scrollToActiveTrack();
+    updateMediaSession();
     updateProgress();
     save();
     if (autoPlay) {
@@ -440,11 +493,50 @@
       updateProgress();
       return;
     }
-    loadTrack(currentIndex - 1, isPlaying);
+    var tracks = getTracks();
+    var prevIndex = currentIndex - 1;
+    if (prevIndex < 0) {
+      if (loopMode === 'all') {
+        loadTrack(tracks.length - 1, isPlaying);
+      } else {
+        audio.currentTime = 0;
+        updateProgress();
+      }
+      return;
+    }
+    loadTrack(prevIndex, isPlaying);
   }
 
   function playNext() {
-    loadTrack(currentIndex + 1, isPlaying);
+    var tracks = getTracks();
+    if (tracks.length === 0) return;
+
+    if (loopMode === 'one') {
+      audio.currentTime = 0;
+      if (isPlaying) {
+        audio.play().catch(function () {});
+      }
+      updateProgress();
+      return;
+    }
+
+    if (shuffle) {
+      var nextIndex;
+      do {
+        nextIndex = Math.floor(Math.random() * tracks.length);
+      } while (tracks.length > 1 && nextIndex === currentIndex);
+      loadTrack(nextIndex, isPlaying);
+      return;
+    }
+
+    var nextIndex = currentIndex + 1;
+    if (nextIndex >= tracks.length) {
+      if (loopMode === 'all') {
+        loadTrack(0, isPlaying);
+      }
+      return;
+    }
+    loadTrack(nextIndex, isPlaying);
   }
 
   function setVolume(v) {
@@ -537,7 +629,6 @@
       setVolume(parseFloat(this.value));
     });
 
-    var lastVol = volume;
     $volumeIcon.addEventListener('click', function () {
       if (volume > 0) {
         lastVol = volume;
@@ -545,6 +636,29 @@
       } else {
         setVolume(lastVol || 0.7);
       }
+    });
+
+    /* Shuffle */
+    $btnShuffle.addEventListener('click', function (e) {
+      e.stopPropagation();
+      shuffle = !shuffle;
+      $btnShuffle.classList.toggle('mp-active', shuffle);
+      save();
+    });
+
+    /* Loop */
+    $btnLoop.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (loopMode === 'all') {
+        loopMode = 'one';
+      } else if (loopMode === 'one') {
+        loopMode = 'none';
+      } else {
+        loopMode = 'all';
+      }
+      $btnLoop.classList.toggle('mp-active', loopMode !== 'all');
+      $btnLoop.classList.toggle('mp-loop-one', loopMode === 'one');
+      save();
     });
 
     /* Progress seek */
@@ -600,6 +714,20 @@
       updatePlayBtn();
       save();
     });
+
+    audio.addEventListener('error', function () {
+      var tracks = getTracks();
+      if (tracks.length <= 1) return;
+      playNext();
+    });
+
+    /* Media Session API */
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.setActionHandler('play', function () { togglePlay(); });
+      navigator.mediaSession.setActionHandler('pause', function () { togglePlay(); });
+      navigator.mediaSession.setActionHandler('previoustrack', function () { playPrev(); });
+      navigator.mediaSession.setActionHandler('nexttrack', function () { playNext(); });
+    }
 
     /* Keyboard shortcuts */
     document.addEventListener('keydown', function (e) {

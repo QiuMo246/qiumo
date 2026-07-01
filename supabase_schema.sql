@@ -51,6 +51,24 @@ CREATE INDEX IF NOT EXISTS idx_likes_comment
     ON likes(comment_id);
 
 -- ============================================
+-- 博客文章表
+-- ============================================
+CREATE TABLE IF NOT EXISTS posts (
+    id          BIGSERIAL PRIMARY KEY,
+    title       TEXT        NOT NULL,
+    slug        TEXT        NOT NULL UNIQUE,
+    content     TEXT        NOT NULL,
+    excerpt     TEXT        DEFAULT '',
+    cover_image TEXT        DEFAULT '',
+    published   BOOLEAN     DEFAULT TRUE,
+    created_at  TIMESTAMPTZ DEFAULT NOW(),
+    updated_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_posts_slug ON posts(slug);
+CREATE INDEX IF NOT EXISTS idx_posts_published ON posts(published, created_at DESC);
+
+-- ============================================
 -- Row Level Security（RLS）策略
 -- 前端直连 Supabase 时需要 RLS
 -- ============================================

@@ -338,34 +338,6 @@
   };
 
   /* ============================================
-     MODULE: Skill Bars Animation
-     ============================================ */
-  const SkillBars = {
-    init() {
-      const bars = $$('.skill-progress');
-      if (!bars.length) return;
-
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              const bar = entry.target;
-              const width = bar.getAttribute('data-width');
-              setTimeout(() => {
-                bar.style.width = width + '%';
-              }, 200);
-              observer.unobserve(bar);
-            }
-          });
-        },
-        { threshold: 0.3 }
-      );
-
-      bars.forEach((bar) => observer.observe(bar));
-    },
-  };
-
-  /* ============================================
      MODULE: Counter Animation (About Stats)
      ============================================ */
   const CounterAnimation = {
@@ -684,7 +656,6 @@
     CursorGlow.init();
     Navigation.init();
     ScrollReveal.init();
-    SkillBars.init();
     CounterAnimation.init();
     CardTilt.init();
     RippleEffect.init();
@@ -692,6 +663,8 @@
     ContactForm.init();
     Toast.init();
     SmoothScroll.init();
+    if (window.Blog) window.Blog.init();
+    if (window.Admin) window.Admin.init();
   }
 
   // Run on DOM ready
