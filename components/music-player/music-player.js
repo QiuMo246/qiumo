@@ -51,6 +51,7 @@
         { title: 'sakana',       artist: 'from秋末', src: 'assets/music/sakana.mp3' },
         { title: '3dgirl没有爱', artist: 'from秋末', src: 'assets/music/3dgirl没有爱.mp3' },
         { title: '19-2000', artist: 'from虞CH', src: 'assets/music/19-2000.mp3' },
+        { title: '烂泥', artist: 'from秋末', src: 'assets/music/烂泥.mp3' },
       ],
     },
 
