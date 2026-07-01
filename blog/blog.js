@@ -66,13 +66,13 @@
 
             try {
                 const res = await fetch(`${API_BASE}/posts`);
-                if (!res.ok) throw new Error('加载博客失败');
-                const posts = await res.json();
-                this.state.posts = posts;
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || '加载博客失败');
+                this.state.posts = data;
                 this.state.view = 'list';
                 this.renderList();
             } catch (err) {
-                this.renderError('加载博客列表失败，请重试');
+                this.renderError(err.message || '加载博客列表失败，请检查环境变量是否配置');
             } finally {
                 this.state.isLoading = false;
             }
@@ -81,17 +81,17 @@
         async loadPost(slug) {
             if (this.state.isLoading) return;
             this.state.isLoading = true;
-            this.renderSkeletonDetail();
+            if (this.container) this.container.innerHTML = ''; // 清除默认骨架屏
 
             try {
-                const res = await fetch(`${API_BASE}/posts?slug=${slug}`);
-                if (!res.ok) throw new Error('文章未找到');
-                const post = await res.json();
-                this.state.currentPost = post;
+                const res = await fetch(`${API_BASE}/posts?slug=${encodeURIComponent(slug)}`);
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || '文章未找到');
+                this.state.currentPost = data;
                 this.state.view = 'detail';
                 this.renderDetail();
             } catch (err) {
-                this.renderError('加载文章失败，请重试');
+                this.renderError(err.message || '加载文章失败，请重试');
             } finally {
                 this.state.isLoading = false;
             }
