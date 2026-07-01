@@ -1,24 +1,35 @@
 // ============================================
-// 留言板主模块
+// 留言板主模块 - Supabase 版
+// 替换原 Cloudflare Worker + D1 方案
 // ============================================
 
 ;(function () {
     'use strict';
 
-    // ---- 配置 ----
-    const API_BASE = 'https://qiumo-comments.moqiu846.workers.dev';
-    const PAGE_SIZE = 10;
-    const CLIENT_ID_KEY = 'gb_client_id';
-    const TOKEN_PREFIX = 'gb_token_';
-    const NICKNAME_KEY = 'gb_nickname';
-    const PENDING_KEY = 'gb_pending_comments';
-    const FAILED_KEY = 'gb_failed_comments';
+    // ============================================
+    // ---- 配置：填入你的 Supabase 项目信息 ----
+    // ============================================
+    const SUPABASE_URL  = 'https://gtockqpvcnwvkpkhqvdv.supabase.co';
+    const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd0b2NrcXB2Y253dmtwa2hxdmR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4OTI0NzUsImV4cCI6MjA5ODQ2ODQ3NX0.kHAyPMpXAGmvpF4a3Cik-OL2O069ieOR0oiraZGXKSU';    
 
-    const TIMEOUT_MS = 15000;       // 请求超时 15s
-    const MAX_RETRIES = 3;          // 最大重试次数
-    const RETRY_BASE_DELAY = 1000;  // 首次重试延迟 1s
+    // ============================================
+    // ---- 常量 ----
+    // ============================================
+    const PAGE_SIZE       = 10;
+    const CLIENT_ID_KEY   = 'gb_client_id';
+    const TOKEN_PREFIX    = 'gb_token_';
+    const NICKNAME_KEY    = 'gb_nickname';
+    const PENDING_KEY     = 'gb_pending_comments';
+    const CACHE_KEY       = 'gb_cache_comments';
+    const CACHE_TTL_MS    = 60 * 1000;    // 评论列表缓存 60s（弱网友好）
 
+    const TIMEOUT_MS      = 12000;        // 请求超时 12s
+    const MAX_RETRIES     = 3;
+    const RETRY_BASE_DELAY = 800;
+
+    // ============================================
     // ---- 工具函数 ----
+    // ============================================
     const $ = (sel, ctx = document) => ctx.querySelector(sel);
     const $$ = (sel, ctx = document) => [...ctx.querySelectorAll(sel)];
 
@@ -29,12 +40,12 @@
     }
 
     function timeAgo(dateStr) {
-        const now = new Date();
-        const date = new Date(dateStr + (dateStr.endsWith('Z') ? '' : 'Z'));
+        const now  = new Date();
+        const date = new Date(dateStr);
         const diff = Math.floor((now - date) / 1000);
-        if (diff < 60) return '刚刚';
-        if (diff < 3600) return Math.floor(diff / 60) + ' 分钟前';
-        if (diff < 86400) return Math.floor(diff / 3600) + ' 小时前';
+        if (diff < 60)      return '刚刚';
+        if (diff < 3600)    return Math.floor(diff / 60)    + ' 分钟前';
+        if (diff < 86400)   return Math.floor(diff / 3600)  + ' 小时前';
         if (diff < 2592000) return Math.floor(diff / 86400) + ' 天前';
         const y = date.getFullYear();
         const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -45,8 +56,9 @@
     function getOrCreateClientId() {
         let id = localStorage.getItem(CLIENT_ID_KEY);
         if (!id) {
-            id = crypto.randomUUID ? crypto.randomUUID() :
-                'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+            id = crypto.randomUUID
+                ? crypto.randomUUID()
+                : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
                     const r = Math.random() * 16 | 0;
                     return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
                 });
@@ -55,23 +67,109 @@
         return id;
     }
 
+    function generateToken() {
+        const arr = new Uint8Array(24);
+        crypto.getRandomValues(arr);
+        return Array.from(arr, b => b.toString(16).padStart(2, '0')).join('');
+    }
+
     function storeToken(commentId, token) {
         localStorage.setItem(TOKEN_PREFIX + commentId, token);
     }
-
     function getToken(commentId) {
         return localStorage.getItem(TOKEN_PREFIX + commentId);
     }
-
     function removeToken(commentId) {
         localStorage.removeItem(TOKEN_PREFIX + commentId);
     }
-
     function isOwnComment(comment) {
         return !!getToken(comment.id);
     }
 
+    // ============================================
+    // ---- Supabase REST 封装（无需 SDK） ----
+    // 直接使用原生 fetch，减少依赖、兼容性更好
+    // ============================================
+    const SB = {
+        headers() {
+            return {
+                'Content-Type':  'application/json',
+                'apikey':        SUPABASE_ANON,
+                'Authorization': `Bearer ${SUPABASE_ANON}`,
+                'Prefer':        'return=representation',
+            };
+        },
+
+        // GET /rest/v1/{table}?select=...&filters
+        async select(table, params = {}) {
+            const url = new URL(`${SUPABASE_URL}/rest/v1/${table}`);
+            Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+            const res = await fetchWithTimeout(url.toString(), {
+                method: 'GET',
+                headers: this.headers(),
+            });
+            if (!res.ok) throw new Error(`DB read error: ${res.status}`);
+            return res.json();
+        },
+
+        // POST /rest/v1/{table}
+        async insert(table, data) {
+            const res = await fetchWithTimeout(`${SUPABASE_URL}/rest/v1/${table}`, {
+                method: 'POST',
+                headers: this.headers(),
+                body: JSON.stringify(data),
+            });
+            const json = await res.json();
+            if (!res.ok) throw new Error(json.message || json.error || '插入失败');
+            return Array.isArray(json) ? json[0] : json;
+        },
+
+        // PATCH /rest/v1/{table}?filter
+        async update(table, filter, data) {
+            const url = new URL(`${SUPABASE_URL}/rest/v1/${table}`);
+            Object.entries(filter).forEach(([k, v]) => url.searchParams.set(k, v));
+            const res = await fetchWithTimeout(url.toString(), {
+                method: 'PATCH',
+                headers: this.headers(),
+                body: JSON.stringify(data),
+            });
+            if (!res.ok) {
+                const json = await res.json().catch(() => ({}));
+                throw new Error(json.message || '更新失败');
+            }
+            return res.json();
+        },
+
+        // DELETE /rest/v1/{table}?filter
+        async delete(table, filter) {
+            const url = new URL(`${SUPABASE_URL}/rest/v1/${table}`);
+            Object.entries(filter).forEach(([k, v]) => url.searchParams.set(k, v));
+            const res = await fetchWithTimeout(url.toString(), {
+                method: 'DELETE',
+                headers: {
+                    ...this.headers(),
+                    'Prefer': 'return=minimal',
+                },
+            });
+            if (!res.ok) throw new Error('删除失败');
+        },
+
+        // 调用 Supabase 数据库函数（RPC）
+        async rpc(fnName, params = {}) {
+            const res = await fetchWithTimeout(`${SUPABASE_URL}/rest/v1/rpc/${fnName}`, {
+                method: 'POST',
+                headers: this.headers(),
+                body: JSON.stringify(params),
+            });
+            const json = await res.json();
+            if (!res.ok) throw new Error(json.message || json.hint || 'RPC 调用失败');
+            return json;
+        },
+    };
+
+    // ============================================
     // ---- 带超时的 fetch ----
+    // ============================================
     function fetchWithTimeout(url, options = {}, timeoutMs = TIMEOUT_MS) {
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -80,111 +178,92 @@
     }
 
     // ---- 自动重试 + 指数退避 ----
-    async function retryFetch(url, options = {}, retries = MAX_RETRIES, retryDelay = RETRY_BASE_DELAY) {
+    async function retryFetch(fn, retries = MAX_RETRIES, delay = RETRY_BASE_DELAY) {
         let lastErr;
         for (let attempt = 0; attempt <= retries; attempt++) {
             try {
-                const res = await fetchWithTimeout(url, options);
-                return res;
+                return await fn();
             } catch (err) {
                 lastErr = err;
-                // 最后一次不再等待，直接抛出
                 if (attempt >= retries) break;
-                // AbortError（超时）或网络错误才重试；HTTP 4xx/5xx 不重试
-                if (err.name === 'AbortError' || err.message === 'Failed to fetch' || err.type === 'dns') {
-                    const delay = retryDelay * Math.pow(2, attempt);
-                    console.warn(`[guestbook] 请求失败 (${attempt + 1}/${retries}), ${delay}ms 后重试:`, err.message);
-                    await new Promise(r => setTimeout(r, delay));
-                } else {
-                    // 其他错误（如 JSON 解析错误）不重试
-                    throw err;
-                }
+                const isNetworkErr = err.name === 'AbortError'
+                    || err.message === 'Failed to fetch'
+                    || !navigator.onLine;
+                if (!isNetworkErr) throw err;
+                const wait = delay * Math.pow(2, attempt);
+                console.warn(`[guestbook] 第 ${attempt + 1} 次重试, ${wait}ms 后...`);
+                await new Promise(r => setTimeout(r, wait));
             }
         }
         throw lastErr;
     }
 
-    // ---- 网络状态检测 ----
-    let isOnline = navigator.onLine;
-    const onlineListeners = [];
+    // ============================================
+    // ---- 本地评论列表缓存（应对弱网） ----
+    // ============================================
+    const Cache = {
+        get(sort) {
+            try {
+                const raw = sessionStorage.getItem(CACHE_KEY + '_' + sort);
+                if (!raw) return null;
+                const { ts, data } = JSON.parse(raw);
+                if (Date.now() - ts > CACHE_TTL_MS) return null;
+                return data;
+            } catch { return null; }
+        },
+        set(sort, data) {
+            try {
+                sessionStorage.setItem(CACHE_KEY + '_' + sort, JSON.stringify({
+                    ts: Date.now(),
+                    data,
+                }));
+            } catch {}
+        },
+        clear(sort) {
+            try { sessionStorage.removeItem(CACHE_KEY + '_' + sort); } catch {}
+        },
+    };
 
-    function initNetworkListeners() {
-        window.addEventListener('online', () => {
-            isOnline = true;
-            console.log('[guestbook] 网络已恢复');
-            // 网络恢复后自动同步未发送的评论
-            syncPendingComments();
-            onlineListeners.forEach(fn => fn(true));
-        });
-        window.addEventListener('offline', () => {
-            isOnline = false;
-            console.log('[guestbook] 网络已断开');
-            showToast('网络已断开，评论将暂存至本地，恢复后自动提交', 'info');
-            onlineListeners.forEach(fn => fn(false));
-        });
-    }
-
-    function onOnlineChange(fn) {
-        onlineListeners.push(fn);
-    }
-
-    // ---- 离线缓存管理 ----
+    // ============================================
+    // ---- 离线队列 ----
+    // ============================================
     function getPendingComments() {
-        try {
-            return JSON.parse(localStorage.getItem(PENDING_KEY)) || [];
-        } catch {
-            return [];
-        }
+        try { return JSON.parse(localStorage.getItem(PENDING_KEY)) || []; }
+        catch { return []; }
     }
-
-    function savePendingComments(comments) {
-        localStorage.setItem(PENDING_KEY, JSON.stringify(comments));
+    function savePendingComments(list) {
+        localStorage.setItem(PENDING_KEY, JSON.stringify(list));
     }
-
     function addPendingComment(comment) {
-        const pending = getPendingComments();
-        pending.push({ ...comment, _queuedAt: Date.now() });
-        savePendingComments(pending);
+        const list = getPendingComments();
+        list.push({ ...comment, _queuedAt: Date.now() });
+        savePendingComments(list);
     }
-
     function removePendingComment(index) {
-        const pending = getPendingComments();
-        pending.splice(index, 1);
-        savePendingComments(pending);
+        const list = getPendingComments();
+        list.splice(index, 1);
+        savePendingComments(list);
     }
 
     async function syncPendingComments() {
         const pending = getPendingComments();
         if (pending.length === 0) return;
-
         showToast(`正在同步 ${pending.length} 条待发送的评论...`, 'info');
 
         for (let i = pending.length - 1; i >= 0; i--) {
             const item = pending[i];
             try {
-                const res = await retryFetch(`${API_BASE}/api/comments`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        nickname: item.nickname,
-                        content: item.content,
-                        parent_id: item.parentId || null,
-                    }),
-                }, 2); // 同步时最多重试 2 次
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.error || '提交失败');
-
-                storeToken(data.id, data.token);
+                const result = await API.createComment(item.nickname, item.content, item.parentId || null);
                 removePendingComment(i);
+                Cache.clear(Guestbook.state.sort);
 
-                // 将同步成功的评论插入列表顶部
                 if (Guestbook && Guestbook.listEl) {
                     const newComment = {
-                        id: data.id,
-                        nickname: data.nickname,
-                        content: data.content,
+                        id: result.id,
+                        nickname: result.nickname,
+                        content: result.content,
                         likes: 0,
-                        created_at: data.created_at,
+                        created_at: result.created_at,
                         replies: [],
                         reply_count: 0,
                     };
@@ -201,32 +280,51 @@
             }
         }
 
-        const remaining = getPendingComments();
-        if (remaining.length === 0) {
-            showToast('全部评论已同步成功 🎉', 'success');
+        if (getPendingComments().length === 0) {
+            showToast('全部评论已同步成功', 'success');
         }
     }
 
-    // ---- 友好的错误消息 ----
+    // ============================================
+    // ---- 网络状态监听 ----
+    // ============================================
+    let isOnline = navigator.onLine;
+
+    function initNetworkListeners() {
+        window.addEventListener('online', () => {
+            isOnline = true;
+            console.log('[guestbook] 网络已恢复');
+            syncPendingComments();
+        });
+        window.addEventListener('offline', () => {
+            isOnline = false;
+            showToast('网络已断开，评论将暂存至本地，恢复后自动提交', 'info');
+        });
+    }
+
+    // ============================================
+    // ---- 错误消息 ----
+    // ============================================
     function getErrorMessage(err, fallback = '操作失败') {
         if (err.name === 'AbortError') return '请求超时，请检查网络后重试';
-        if (err.message === 'Failed to fetch' || err.type === 'dns' || !navigator.onLine) {
-            return '网络连接异常，评论已暂存至本地，恢复网络后将自动提交';
+        if (err.message === 'Failed to fetch' || !navigator.onLine) {
+            return '网络连接异常，评论已暂存至本地，恢复后自动提交';
         }
         return err.message || fallback;
     }
 
-    // ---- Toast（复用 script.js 模式） ----
+    // ============================================
+    // ---- Toast ----
+    // ============================================
     function showToast(message, type = 'info') {
         const container = $('#toastContainer');
         if (!container) return;
         const toast = document.createElement('div');
         toast.className = 'toast';
         toast.style.position = 'relative';
-        const iconClass = type === 'success' ? 'success' : type === 'error' ? 'error' : '';
         const icon = type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ';
         toast.innerHTML = `
-            <span class="toast-icon ${iconClass}">${icon}</span>
+            <span class="toast-icon ${type === 'success' ? 'success' : type === 'error' ? 'error' : ''}">${icon}</span>
             <span class="toast-text">${escapeHtml(message)}</span>
             <div class="toast-progress"></div>
         `;
@@ -238,58 +336,195 @@
         }, 3500);
     }
 
-    // ---- API 客户端（增强版） ----
+    // ============================================
+    // ---- API 层（基于 Supabase REST） ----
+    // ============================================
     const API = {
-        async getComments(sort, cursor) {
-            let url = `${API_BASE}/api/comments?sort=${sort}&limit=${PAGE_SIZE}`;
-            if (cursor) url += `&cursor=${encodeURIComponent(cursor)}`;
-            const res = await retryFetch(url);
-            if (!res.ok) throw new Error('加载失败');
-            return res.json();
+
+        /**
+         * 获取评论列表（分页）
+         * 使用 Supabase PostgREST Range 分页
+         */
+        async getComments(sort, page = 0) {
+            const from = page * PAGE_SIZE;
+            const to   = from + PAGE_SIZE - 1;
+
+            // 查询顶层评论
+            const orderParam = sort === 'popular'
+                ? 'likes.desc,id.desc'
+                : 'created_at.desc';
+
+            const comments = await retryFetch(() =>
+                SB.select('comments', {
+                    select:      'id,parent_id,nickname,content,likes,created_at',
+                    is_deleted:  'eq.false',
+                    parent_id:   'is.null',
+                    order:       orderParam,
+                    offset:      from,
+                    limit:       PAGE_SIZE + 1,   // 多取 1 条判断 has_more
+                })
+            );
+
+            const hasMore   = comments.length > PAGE_SIZE;
+            const pageItems = comments.slice(0, PAGE_SIZE);
+            const ids       = pageItems.map(c => c.id);
+
+            // 批量获取回复（最多 3 条 per 父评论）
+            let repliesMap    = {};
+            let replyCountMap = {};
+
+            if (ids.length > 0) {
+                const allReplies = await retryFetch(() =>
+                    SB.select('comments', {
+                        select:     'id,parent_id,nickname,content,likes,created_at',
+                        is_deleted: 'eq.false',
+                        parent_id:  `in.(${ids.join(',')})`,
+                        order:      'created_at.asc',
+                    })
+                );
+
+                for (const reply of allReplies) {
+                    const pid = reply.parent_id;
+                    replyCountMap[pid] = (replyCountMap[pid] || 0) + 1;
+                    if (!repliesMap[pid]) repliesMap[pid] = [];
+                    if (repliesMap[pid].length < 3) {
+                        repliesMap[pid].push(reply);
+                    }
+                }
+            }
+
+            // 获取总数（使用 HEAD 请求 + Content-Range）
+            const total = await this._getTotal();
+
+            return {
+                comments: pageItems.map(c => ({
+                    ...c,
+                    replies:     repliesMap[c.id]    || [],
+                    reply_count: replyCountMap[c.id] || 0,
+                })),
+                has_more: hasMore,
+                total,
+                next_page: hasMore ? page + 1 : null,
+            };
         },
 
+        // 获取总条数（只请求 header，不传输数据体）
+        async _getTotal() {
+            try {
+                const res = await fetchWithTimeout(`${SUPABASE_URL}/rest/v1/comments?select=id&is_deleted=eq.false&parent_id=is.null`, {
+                    method: 'HEAD',
+                    headers: {
+                        ...SB.headers(),
+                        'Prefer': 'count=exact',
+                    },
+                });
+                const range = res.headers.get('Content-Range');
+                if (range) {
+                    const total = range.split('/')[1];
+                    return total === '*' ? 0 : parseInt(total) || 0;
+                }
+            } catch {}
+            return 0;
+        },
+
+        // 获取某条评论的全部回复
         async getReplies(parentId) {
-            const res = await retryFetch(`${API_BASE}/api/comments?parent_id=${parentId}`);
-            if (!res.ok) throw new Error('加载回复失败');
-            return res.json();
+            const replies = await retryFetch(() =>
+                SB.select('comments', {
+                    select:     'id,parent_id,nickname,content,likes,created_at',
+                    is_deleted: 'eq.false',
+                    parent_id:  `eq.${parentId}`,
+                    order:      'created_at.asc',
+                })
+            );
+            return { replies };
         },
 
+        // 发表评论
         async createComment(nickname, content, parentId = null) {
-            const res = await retryFetch(`${API_BASE}/api/comments`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ nickname, content, parent_id: parentId }),
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || '提交失败');
-            return data;
+            const token = generateToken();
+
+            // 验证父评论（若有）：只支持一级嵌套
+            if (parentId) {
+                const parents = await retryFetch(() =>
+                    SB.select('comments', {
+                        select:     'id,parent_id',
+                        id:         `eq.${parentId}`,
+                        is_deleted: 'eq.false',
+                    })
+                );
+                if (!parents.length) throw new Error('父评论不存在');
+                if (parents[0].parent_id !== null) throw new Error('只支持一级回复');
+            }
+
+            const row = await retryFetch(() =>
+                SB.insert('comments', {
+                    nickname:   nickname.trim().slice(0, 20),
+                    content:    content.trim().slice(0, 1000),
+                    token,
+                    parent_id:  parentId || null,
+                    ip_address: null,     // 纯前端无法拿到真实 IP
+                })
+            );
+
+            return {
+                id:         row.id,
+                token,
+                nickname:   row.nickname,
+                content:    row.content,
+                created_at: row.created_at,
+            };
         },
 
+        // 删除评论（软删除，需要 token 验证）
         async deleteComment(id, token) {
-            const res = await retryFetch(`${API_BASE}/api/comments/${id}`, {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token }),
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || '删除失败');
-            return data;
+            // 读取数据库中的 token 验证
+            const rows = await retryFetch(() =>
+                SB.select('comments', {
+                    select: 'token',
+                    id:     `eq.${id}`,
+                })
+            );
+            if (!rows.length) throw new Error('评论不存在');
+
+            // 恒定时间 token 比较
+            const storedToken = rows[0].token;
+            if (!timingSafeEqual(token, storedToken)) {
+                throw new Error('凭证无效，无法删除');
+            }
+
+            await retryFetch(() =>
+                SB.update('comments', { id: `eq.${id}` }, { is_deleted: true })
+            );
+            return { success: true };
         },
 
+        // 点赞 / 取消点赞（调用 DB 函数保证原子性）
         async toggleLike(id) {
             const clientId = getOrCreateClientId();
-            const res = await retryFetch(`${API_BASE}/api/comments/${id}/like`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ client_id: clientId }),
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || '操作失败');
-            return data;
+            const result = await retryFetch(() =>
+                SB.rpc('toggle_like', {
+                    p_comment_id: id,
+                    p_client_id:  clientId,
+                })
+            );
+            return result; // { liked: bool, likes: number }
         },
     };
 
+    // ---- 恒定时间字符串比较（防时序攻击） ----
+    function timingSafeEqual(a, b) {
+        if (a.length !== b.length) return false;
+        let diff = 0;
+        for (let i = 0; i < a.length; i++) {
+            diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+        }
+        return diff === 0;
+    }
+
+    // ============================================
     // ---- Skeleton Loading ----
+    // ============================================
     function renderSkeleton(count = 3) {
         let html = '';
         for (let i = 0; i < count; i++) {
@@ -314,18 +549,18 @@
         return html;
     }
 
+    // ============================================
     // ---- 渲染评论 ----
+    // ============================================
     function renderComment(comment, isReply = false) {
-        const own = isOwnComment(comment);
-        const initial = (comment.nickname || '?')[0];
+        const own        = isOwnComment(comment);
+        const initial    = (comment.nickname || '?')[0];
         const authorName = '秋末';
-        const isAuthor = comment.nickname === authorName;
-        const likedKey = `gb_liked_${comment.id}`;
-        const hasLiked = localStorage.getItem(likedKey) === '1';
+        const isAuthor   = comment.nickname === authorName;
+        const likedKey   = `gb_liked_${comment.id}`;
+        const hasLiked   = localStorage.getItem(likedKey) === '1';
 
-        const avatarBg = isAuthor
-            ? 'background: var(--gradient-primary)'
-            : '';
+        const avatarBg = isAuthor ? 'background: var(--gradient-primary)' : '';
 
         let html = `
             <div class="gb-card ${isReply ? 'gb-reply-card' : ''}" data-id="${comment.id}">
@@ -360,7 +595,7 @@
                     </button>` : ''}
                 </div>
                 <div class="gb-replies" data-parent-id="${comment.id}">`;
-        // 回复区
+
         if (comment.replies && comment.replies.length > 0) {
             comment.replies.forEach(reply => {
                 html += renderComment(reply, true);
@@ -383,40 +618,41 @@
             </div>`;
     }
 
+    // ============================================
     // ---- 主控制器 ----
+    // ============================================
     const Guestbook = {
         state: {
-            sort: 'latest',
-            cursor: null,
-            hasMore: false,
-            total: 0,
-            isLoading: false,
-            submitting: false,
-            replyingTo: null, // { id, nickname }
+            sort:        'latest',
+            page:        0,          // Supabase 用页码替代 cursor
+            hasMore:     false,
+            total:       0,
+            isLoading:   false,
+            submitting:  false,
+            replyingTo:  null,
+            pollTimer:   null,       // 轮询定时器
         },
 
         init() {
-            this.listEl = $('#gb-list');
-            this.formEl = $('#gb-form');
-            this.submitBtn = $('#gb-submit-btn');
-            this.nicknameEl = $('#gb-nickname');
-            this.contentEl = $('#gb-content');
-            this.charCountEl = $('#gb-char-count');
-            this.loadMoreEl = $('#gb-load-more');
-            this.loadMoreBtn = $('#gb-load-more-btn');
-            this.countEl = $('#gb-count');
-            this.emojiBtn = $('#gb-emoji-btn');
-            this.previewBtn = $('#gb-md-preview-btn');
-            this.previewEl = $('#gb-md-preview');
+            this.listEl         = $('#gb-list');
+            this.formEl         = $('#gb-form');
+            this.submitBtn      = $('#gb-submit-btn');
+            this.nicknameEl     = $('#gb-nickname');
+            this.contentEl      = $('#gb-content');
+            this.charCountEl    = $('#gb-char-count');
+            this.loadMoreEl     = $('#gb-load-more');
+            this.loadMoreBtn    = $('#gb-load-more-btn');
+            this.countEl        = $('#gb-count');
+            this.emojiBtn       = $('#gb-emoji-btn');
+            this.previewBtn     = $('#gb-md-preview-btn');
+            this.previewEl      = $('#gb-md-preview');
             this.previewContent = $('#gb-md-preview-content');
-            this.emojiPickerEl = $('#gb-emoji-picker');
+            this.emojiPickerEl  = $('#gb-emoji-picker');
 
             if (!this.listEl) return;
 
-            // 初始化网络状态监听
             initNetworkListeners();
 
-            // 初始化 Emoji Picker
             if (this.emojiPickerEl && this.contentEl) {
                 window.EmojiPicker.init(this.contentEl, this.emojiPickerEl);
             }
@@ -424,21 +660,59 @@
             this.restoreNickname();
             this.bindEvents();
             this.loadComments(true);
+
+            // 启动轮询（替代 WebSocket 实时更新）
+            this.startPolling();
+        },
+
+        // ============================================
+        // ---- 轮询（弱网友好，替代实时推送） ----
+        // ============================================
+        startPolling(intervalMs = 90000) {  // 每 90s 轮询一次
+            this.stopPolling();
+            this.state.pollTimer = setInterval(() => {
+                // 页面可见时才轮询
+                if (document.visibilityState === 'visible' && navigator.onLine) {
+                    Cache.clear(this.state.sort);   // 清除缓存，拉取最新
+                    this.silentRefresh();
+                }
+            }, intervalMs);
+            // 页面重新变为可见时也触发
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') {
+                    this.silentRefresh();
+                }
+            });
+        },
+
+        stopPolling() {
+            if (this.state.pollTimer) {
+                clearInterval(this.state.pollTimer);
+                this.state.pollTimer = null;
+            }
+        },
+
+        // 静默刷新：只更新计数，不重置列表
+        async silentRefresh() {
+            try {
+                const total = await API._getTotal();
+                if (total !== this.state.total) {
+                    this.state.total = total;
+                    this.countEl.textContent = `${total} 条留言`;
+                }
+            } catch {}
         },
 
         bindEvents() {
-            // 表单提交
             this.formEl.addEventListener('submit', (e) => {
                 e.preventDefault();
                 this.submitComment();
             });
 
-            // 字数统计
             this.contentEl.addEventListener('input', () => {
                 this.charCountEl.textContent = this.contentEl.value.length;
             });
 
-            // 排序按钮
             $$('.gb-sort-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
                     $$('.gb-sort-btn').forEach(b => b.classList.remove('active'));
@@ -448,19 +722,16 @@
                 });
             });
 
-            // 加载更多
             this.loadMoreBtn.addEventListener('click', () => {
                 this.loadComments(false);
             });
 
-            // Emoji 按钮
             if (this.emojiBtn) {
                 this.emojiBtn.addEventListener('click', () => {
                     window.EmojiPicker.toggle();
                 });
             }
 
-            // Markdown 预览
             if (this.previewBtn) {
                 this.previewBtn.addEventListener('click', () => {
                     const visible = this.previewEl.style.display !== 'none';
@@ -468,53 +739,67 @@
                         this.previewEl.style.display = 'none';
                         this.contentEl.style.display = '';
                     } else {
-                        this.previewContent.innerHTML = Markdown.render(this.contentEl.value) || '<p style="color:var(--text-muted)">在左侧输入内容即可预览</p>';
-                        this.previewEl.style.display = 'block';
-                        this.contentEl.style.display = 'none';
+                        this.previewContent.innerHTML = Markdown.render(this.contentEl.value)
+                            || '<p style="color:var(--text-muted)">在左侧输入内容即可预览</p>';
+                        this.previewEl.style.display  = 'block';
+                        this.contentEl.style.display  = 'none';
                     }
                 });
             }
 
-            // 评论列表事件委托
             this.listEl.addEventListener('click', (e) => {
-                const likeBtn = e.target.closest('.gb-like-btn');
-                const replyBtn = e.target.closest('.gb-reply-btn');
-                const deleteBtn = e.target.closest('.gb-delete-btn');
+                const likeBtn    = e.target.closest('.gb-like-btn');
+                const replyBtn   = e.target.closest('.gb-reply-btn');
+                const deleteBtn  = e.target.closest('.gb-delete-btn');
                 const showMoreBtn = e.target.closest('.gb-show-more-replies');
 
-                if (likeBtn) this.toggleLike(likeBtn);
-                else if (replyBtn) this.startReply(replyBtn);
-                else if (deleteBtn) this.confirmDelete(deleteBtn);
+                if (likeBtn)      this.toggleLike(likeBtn);
+                else if (replyBtn)   this.startReply(replyBtn);
+                else if (deleteBtn)  this.confirmDelete(deleteBtn);
                 else if (showMoreBtn) this.loadAllReplies(showMoreBtn);
             });
 
-            // 点击外部关闭 Emoji Picker
             document.addEventListener('click', (e) => {
-                if (this.emojiPickerEl && !this.emojiPickerEl.contains(e.target) && e.target !== this.emojiBtn) {
+                if (this.emojiPickerEl
+                    && !this.emojiPickerEl.contains(e.target)
+                    && e.target !== this.emojiBtn) {
                     window.EmojiPicker.hide();
                 }
             });
         },
 
-        // ---- 加载评论 ----
+        // ============================================
+        // ---- 加载评论（带缓存回退） ----
+        // ============================================
         async loadComments(reset) {
             if (this.state.isLoading) return;
             this.state.isLoading = true;
 
             if (reset) {
-                this.state.cursor = null;
+                this.state.page    = 0;
                 this.state.hasMore = false;
                 this.listEl.innerHTML = renderSkeleton();
                 this.loadMoreEl.style.display = 'none';
             }
 
             try {
-                const data = await API.getComments(this.state.sort, this.state.cursor);
-                this.state.total = data.total;
-                this.state.hasMore = data.has_more;
-                this.state.cursor = data.next_cursor;
+                // 先尝试从缓存读取（仅 reset 时）
+                let data = null;
+                if (reset) {
+                    data = Cache.get(this.state.sort);
+                }
 
-                if (reset) this.listEl.innerHTML = '';
+                if (!data) {
+                    data = await API.getComments(this.state.sort, this.state.page);
+                    if (reset) Cache.set(this.state.sort, data);
+                }
+
+                this.state.total   = data.total;
+                this.state.hasMore = data.has_more;
+
+                if (reset) {
+                    this.listEl.innerHTML = '';
+                }
 
                 if (data.comments.length === 0 && reset) {
                     this.listEl.innerHTML = renderEmpty();
@@ -524,14 +809,22 @@
                     });
                 }
 
-                // 更新计数
                 this.countEl.textContent = `${this.state.total} 条留言`;
-
-                // 显示/隐藏加载更多
                 this.loadMoreEl.style.display = this.state.hasMore ? '' : 'none';
+
             } catch (err) {
-                console.error('加载评论失败:', err);
-                if (reset) {
+                console.error('[guestbook] 加载评论失败:', err);
+
+                // 降级：尝试从缓存显示旧数据
+                const cached = Cache.get(this.state.sort);
+                if (cached && reset) {
+                    this.listEl.innerHTML = '';
+                    cached.comments.forEach(c => {
+                        this.listEl.insertAdjacentHTML('beforeend', renderComment(c));
+                    });
+                    this.countEl.textContent = `${cached.total} 条留言（缓存）`;
+                    showToast('网络异常，显示上次缓存的评论', 'info');
+                } else if (reset) {
                     this.listEl.innerHTML = `
                         <div class="gb-empty">
                             <p>加载失败</p>
@@ -549,38 +842,49 @@
             }
         },
 
-        // ---- 提交评论（增强版：离线缓存 + 自动同步） ----
+        // ============================================
+        // ---- 提交评论 ----
+        // ============================================
         async submitComment() {
             if (this.state.submitting) return;
 
             const nickname = this.nicknameEl.value.trim();
-            const content = this.contentEl.value.trim();
+            const content  = this.contentEl.value.trim();
 
             if (!nickname) { showToast('请输入昵称', 'error'); return; }
-            if (!content) { showToast('请输入评论内容', 'error'); return; }
+            if (!content)  { showToast('请输入评论内容', 'error'); return; }
+            if (nickname.length > 20)   { showToast('昵称不超过 20 个字符', 'error'); return; }
+            if (content.length  > 1000) { showToast('评论内容不超过 1000 个字符', 'error'); return; }
 
             this.state.submitting = true;
             this.submitBtn.classList.add('loading');
             this.submitBtn.disabled = true;
 
             try {
-                const data = await API.createComment(nickname, content, this.state.replyingTo?.id || null);
+                const data = await API.createComment(
+                    nickname,
+                    content,
+                    this.state.replyingTo?.id || null
+                );
                 storeToken(data.id, data.token);
                 localStorage.setItem(NICKNAME_KEY, nickname);
 
                 // 清空表单
-                this.contentEl.value = '';
+                this.contentEl.value       = '';
                 this.charCountEl.textContent = '0';
                 this.cancelReply();
 
-                // 构建新评论 HTML 并插入
+                // 清除缓存，下次加载获取最新
+                Cache.clear(this.state.sort);
+
+                // 构建并插入新评论卡片
                 const newComment = {
-                    id: data.id,
-                    nickname: data.nickname,
-                    content: data.content,
-                    likes: 0,
-                    created_at: data.created_at,
-                    replies: [],
+                    id:          data.id,
+                    nickname:    data.nickname,
+                    content:     data.content,
+                    likes:       0,
+                    created_at:  data.created_at,
+                    replies:     [],
                     reply_count: 0,
                 };
 
@@ -601,32 +905,29 @@
 
                 this.state.total++;
                 this.countEl.textContent = `${this.state.total} 条留言`;
-                showToast('留言发表成功 🎉', 'success');
+                showToast('留言发表成功', 'success');
 
-                // 成功后恢复按钮状态
                 this.submitBtn.classList.remove('loading');
                 this.submitBtn.classList.add('success');
-                setTimeout(() => {
-                    this.submitBtn.classList.remove('success');
-                }, 1500);
+                setTimeout(() => this.submitBtn.classList.remove('success'), 1500);
 
             } catch (err) {
-                // ---- 离线 / 网络错误时缓存到本地 ----
-                const errorMsg = getErrorMessage(err, '提交失败');
+                const isNetworkErr = err.name === 'AbortError'
+                    || err.message === 'Failed to fetch'
+                    || !navigator.onLine;
 
-                if (err.name === 'AbortError' || err.message === 'Failed to fetch' || !navigator.onLine) {
+                if (isNetworkErr) {
                     addPendingComment({
                         nickname,
                         content,
                         parentId: this.state.replyingTo?.id || null,
                     });
-                    showToast('评论已暂存至本地，网络恢复后自动提交 👍', 'info');
-                    // 清空表单，避免重复缓存
-                    this.contentEl.value = '';
+                    showToast('评论已暂存至本地，网络恢复后自动提交', 'info');
+                    this.contentEl.value       = '';
                     this.charCountEl.textContent = '0';
                     this.cancelReply();
                 } else {
-                    showToast(errorMsg, 'error');
+                    showToast(getErrorMessage(err, '提交失败'), 'error');
                 }
 
                 this.submitBtn.classList.remove('loading');
@@ -638,11 +939,10 @@
 
         // ---- 回复 ----
         startReply(btn) {
-            const id = parseInt(btn.dataset.id);
+            const id       = parseInt(btn.dataset.id);
             const nickname = btn.dataset.nickname;
             this.state.replyingTo = { id, nickname };
 
-            // 在表单前显示回复提示
             let indicator = $('.gb-reply-indicator');
             if (!indicator) {
                 indicator = document.createElement('div');
@@ -654,10 +954,8 @@
                 <button class="gb-reply-cancel" type="button">&times;</button>
             `;
             indicator.style.display = 'flex';
-
             indicator.querySelector('.gb-reply-cancel').addEventListener('click', () => this.cancelReply());
 
-            // 滚动到表单
             this.formEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
             setTimeout(() => this.contentEl.focus(), 300);
         },
@@ -670,11 +968,10 @@
 
         // ---- 删除 ----
         confirmDelete(btn) {
-            const id = parseInt(btn.dataset.id);
+            const id    = parseInt(btn.dataset.id);
             const token = getToken(id);
             if (!token) { showToast('无法验证身份', 'error'); return; }
 
-            // 创建确认弹窗
             const overlay = document.createElement('div');
             overlay.className = 'gb-confirm-overlay';
             overlay.innerHTML = `
@@ -701,11 +998,13 @@
                 try {
                     await API.deleteComment(id, token);
                     removeToken(id);
+                    Cache.clear(this.state.sort);
+
                     const card = $(`.gb-card[data-id="${id}"]`);
                     if (card) {
                         card.style.transition = 'all 0.4s ease';
-                        card.style.opacity = '0';
-                        card.style.transform = 'translateY(-10px) scale(0.98)';
+                        card.style.opacity    = '0';
+                        card.style.transform  = 'translateY(-10px) scale(0.98)';
                         setTimeout(() => card.remove(), 400);
                     }
                     this.state.total = Math.max(0, this.state.total - 1);
@@ -717,16 +1016,15 @@
             });
         },
 
-        // ---- 点赞 ----
+        // ---- 点赞（乐观更新） ----
         async toggleLike(btn) {
-            const id = parseInt(btn.dataset.id);
-            const likedKey = `gb_liked_${id}`;
-            const wasLiked = localStorage.getItem(likedKey) === '1';
-            const countEl = btn.querySelector('.gb-like-count');
-            const svgEl = btn.querySelector('svg');
+            const id           = parseInt(btn.dataset.id);
+            const likedKey     = `gb_liked_${id}`;
+            const wasLiked     = localStorage.getItem(likedKey) === '1';
+            const countEl      = btn.querySelector('.gb-like-count');
+            const svgEl        = btn.querySelector('svg');
             const currentCount = parseInt(countEl.textContent) || 0;
 
-            // 乐观更新
             const newLiked = !wasLiked;
             const newCount = newLiked ? currentCount + 1 : Math.max(0, currentCount - 1);
             localStorage.setItem(likedKey, newLiked ? '1' : '0');
@@ -736,7 +1034,6 @@
 
             try {
                 const result = await API.toggleLike(id);
-                // 以服务端为准
                 countEl.textContent = result.likes;
                 localStorage.setItem(likedKey, result.liked ? '1' : '0');
                 btn.classList.toggle('liked', result.liked);
@@ -747,6 +1044,7 @@
                 btn.classList.toggle('liked', wasLiked);
                 svgEl.setAttribute('fill', wasLiked ? 'currentColor' : 'none');
                 countEl.textContent = currentCount;
+                showToast('点赞失败，请重试', 'error');
             }
         },
 
@@ -754,22 +1052,20 @@
         async loadAllReplies(btn) {
             const parentId = btn.dataset.parentId;
             btn.textContent = '加载中...';
-            btn.disabled = true;
+            btn.disabled    = true;
 
             try {
                 const data = await API.getReplies(parentId);
-                const repliesContainer = this.listEl.querySelector(`.gb-replies[data-parent-id="${parentId}"]`);
-                if (!repliesContainer) return;
-
-                // 清除已有回复，渲染全部
-                repliesContainer.innerHTML = '';
+                const container = this.listEl.querySelector(`.gb-replies[data-parent-id="${parentId}"]`);
+                if (!container) return;
+                container.innerHTML = '';
                 data.replies.forEach(reply => {
-                    repliesContainer.insertAdjacentHTML('beforeend', renderComment(reply, true));
+                    container.insertAdjacentHTML('beforeend', renderComment(reply, true));
                 });
             } catch (err) {
                 showToast(getErrorMessage(err, '加载回复失败'), 'error');
                 btn.textContent = '重试';
-                btn.disabled = false;
+                btn.disabled    = false;
             }
         },
 
@@ -780,9 +1076,18 @@
                 this.nicknameEl.value = saved;
             }
         },
+
+        // ---- 加载更多（翻页） ----
+        loadMore() {
+            if (!this.state.hasMore || this.state.isLoading) return;
+            this.state.page++;
+            this.loadComments(false);
+        },
     };
 
+    // ============================================
     // ---- 初始化 ----
+    // ============================================
     function init() {
         Guestbook.init();
     }
