@@ -462,37 +462,33 @@
      ============================================ */
   const ProjectData = {
     1: {
-      title: 'NovaPay',
-      subtitle: '金融科技仪表盘 — 2024',
-      description: `NovaPay 是一款面向现代金融管理的综合仪表盘。它具备实时交易分析、基于 D3.js 的交互式数据可视化，以及无缝的支付处理工作流。
-
-该项目涉及设计和开发一个复杂的数据密集型界面，既要直观又要高性能。关键挑战包括优化实时数据流、创建响应式图表组件，以及确保所有交互元素的可访问性。
-
-该仪表盘服务于数千名日活跃用户，其简洁的美学和流畅的交互广受好评，证明了金融工具可以既强大又美观。`,
-      tags: ['Vue 3', 'D3.js', 'Node.js', 'WebSocket', 'PostgreSQL'],
-      github: 'https://github.com/qiumo/novapay',
+      title: 'Antigravity',
+      subtitle: 'OpenCode 专用第三方插件',
+      description: `这是一款 OpenCode 专用第三方插件，不用 API 密钥，直接用谷歌账号 OAuth 登录谷歌 Antigravity 服务，就能在 OpenCode 里调用 Claude、Gemini 高端模型。多谷歌账号自动轮换，解决额度限流；
+同时使用 Antigravity、Gemini CLI 两套免费额度；
+支持模型深度思考、联网搜索、会话自动重试。`,
+      tags: ['TypeScript', 'Shell', 'JavaScript'],
+      github: 'https://github.com/NoeFabris/opencode-antigravity-auth',
     },
+
+  
     2: {
       title: 'Artisan',
-      subtitle: 'AI 设计工具 — 2024',
-      description: `Artisan 是一款 AI 驱动的设计工具，连接了想象力与创作之间的鸿沟。用户用自然语言描述需求，Artisan 便能生成符合期望的精美 UI 组件。
-
-基于 GPT-4 的自然语言理解能力与自定义图像生成管线，Artisan 将文字提示转化为可投入生产的设计师件。工具包含实时预览编辑器、组件库管理和多格式导出功能。
-
-该项目推动了 AI 辅助设计的可能性边界，证明了机器学习可以增强而非替代人类的创造力。`,
-      tags: ['React', 'Python', 'GPT-4', 'Tailwind', 'Figma Plugin'],
-      github: 'https://github.com/qiumo/artisan',
+      subtitle: '免费的沉浸式氛围感音乐播放器',
+      description: `Mineradio 是开发者 XxHuberrr 开源、基于 Electron 打造的沉浸式视觉向桌面音乐播放器，开源协议 GPL-3.0，全程无广告、无功能付费锁、无捆绑软件。
+原版仅支持 Windows，社区开发者移植出 macOS（Intel/M 芯片双版）、安卓客户端，同时提供网页版，可浏览器直接打开体验，核心定位不是单纯听歌工具，而是带电影级动态视觉的私人音乐舞台。`,
+      tags: ['HTML', 'JavaScript', 'NSIS'],
+      github: 'https://github.com/XxHuberrr/Mineradio',
     },
+
+
     3: {
-      title: 'Breeze',
-      subtitle: '习惯追踪 PWA — 2023',
-      description: `Breeze 是一款极简习惯追踪器，通过温和的提醒和可视化的连续打卡记录，帮助用户建立积极的日常习惯。应用遵循"少即是多"的理念——没有杂乱的仪表盘，只有纯粹的习惯追踪。
-
-功能包括从用户行为中学习的智能提醒、带有精美可视化的打卡分析，以及让每次打卡都成为愉快体验的治愈配色。作为 PWA，Breeze 支持离线使用，可直接从浏览器安装。
-
-这个项目让我收获了关于用户心理学、通知设计和构建真正改善人们日常生活的应用的宝贵经验。目前下载量已超过 5000 次。`,
-      tags: ['Vue 3', 'Firebase', 'PWA', 'Chart.js', 'Vuetify'],
-      github: 'https://github.com/qiumo/breeze',
+      title: 'blind_watermark',
+      subtitle: '开源 Python 盲水印库',
+      description: `blind_watermark 是国内开发者 guofei9987 开源的 Python 盲水印库，GitHub Star 过万，MIT 开源协议，是目前最易用、落地最多的图片隐形盲水印工具。
+核心定义：盲水印（Blind Watermark），提取水印不需要原始无水印原图，只需要带水印图片 + 两组密钥即可解析，区别于普通水印、非盲水`,
+      tags: ['Python'],
+      github: 'https://github.com/guofei9987/blind_watermark',
     },
   };
 
