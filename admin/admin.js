@@ -117,15 +117,16 @@
         async loadComments() {
             this.renderLoading();
             try {
+                const token = localStorage.getItem('admin_token');
                 const res = await fetch(`${API_BASE}/admin/comments`, {
-                    headers: getAuthHeader()
+                    headers: { 'Authorization': `Bearer ${token}` }
                 });
-                if (!res.ok) throw new Error('加载失败');
-                const data = await res.json();
-                this.state.comments = data;
+                const body = await res.text();
+                if (!res.ok) throw new Error(`HTTP ${res.status}: ${body}`);
+                this.state.comments = JSON.parse(body);
                 this.renderCommentsDashboard();
             } catch (err) {
-                this.renderError('无法加载评论数据，请检查登录凭证');
+                this.renderError('加载失败 [' + err.message + ']');
             }
         },
 
@@ -147,15 +148,16 @@
         async loadPosts() {
             this.renderLoading();
             try {
+                const token = localStorage.getItem('admin_token');
                 const res = await fetch(`${API_BASE}/admin/posts`, {
-                    headers: getAuthHeader()
+                    headers: { 'Authorization': `Bearer ${token}` }
                 });
-                if (!res.ok) throw new Error('加载文章失败');
-                const data = await res.json();
-                this.state.posts = data;
+                const body = await res.text();
+                if (!res.ok) throw new Error(`HTTP ${res.status}: ${body}`);
+                this.state.posts = JSON.parse(body);
                 this.renderPostsDashboard();
             } catch (err) {
-                this.renderError('无法加载文章数据');
+                this.renderError('加载失败 [' + err.message + ']');
             }
         },
 
