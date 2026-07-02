@@ -509,7 +509,7 @@
           '<button class="mp-btn mp-btn-prev" id="mp-btn-prev" aria-label="Previous">' + icons.prev + '</button>' +
           '<button class="mp-btn mp-btn-play" id="mp-btn-play" aria-label="Play">' + icons.play + '</button>' +
           '<button class="mp-btn mp-btn-next" id="mp-btn-next" aria-label="Next">' + icons.next + '</button>' +
-          '<button class="mp-btn mp-btn-loop' + (loopMode !== 'all' ? ' mp-active' : '') + (loopMode === 'one' ? ' mp-loop-one' : '') + '" id="mp-btn-loop" aria-label="Loop">' + icons.loop + '</button>' +
+          '<button class="mp-btn mp-btn-loop' + (loopMode !== 'none' ? ' mp-active' : '') + (loopMode === 'one' ? ' mp-loop-one' : '') + '" id="mp-btn-loop" aria-label="Loop">' + icons.loop + '</button>' +
         '</div>' +
 
         /* Spectrum */
@@ -698,7 +698,7 @@
             updatePlayBtn();
             SpectrumVisualizer.start();
             if (volume > 0) fadeIn(250);
-          }).catch(function () {});
+          }).catch(function (err) { console.warn('[MusicPlayer] play error:', err); });
         });
       }
     }
@@ -726,7 +726,7 @@
         audio.play().then(function () {
           isPlaying = true;
           SpectrumVisualizer.start();
-        }).catch(function () {});
+        }).catch(function (err) { console.warn('[MusicPlayer] play error:', err); });
       });
     }
     updatePlayBtn();
@@ -760,7 +760,7 @@
       audio.currentTime = 0;
       if (isPlaying) {
         SpectrumVisualizer.ensureAudioGraph(function () {
-          audio.play().catch(function () {});
+          audio.play().catch(function (err) { console.warn('[MusicPlayer] play error:', err); });
         });
       }
       updateProgress();
@@ -780,6 +780,12 @@
     if (nextIndex >= tracks.length) {
       if (loopMode === 'all') {
         loadTrack(0, isPlaying);
+      } else {
+        /* No more tracks to play — reset UI state */
+        isPlaying = false;
+        updatePlayBtn();
+        SpectrumVisualizer.stop();
+        save();
       }
       return;
     }
@@ -842,8 +848,11 @@
       e.stopPropagation();
       panelOpen = !panelOpen;
       $panel.classList.toggle('mp-open', panelOpen);
-      if (panelOpen && !audio.src) {
-        loadTrack(currentIndex, false);
+      if (panelOpen) {
+        SpectrumVisualizer._resize();
+        if (!audio.src) {
+          loadTrack(currentIndex, false);
+        }
       }
     });
 
@@ -903,7 +912,7 @@
       } else {
         loopMode = 'all';
       }
-      $btnLoop.classList.toggle('mp-active', loopMode !== 'all');
+      $btnLoop.classList.toggle('mp-active', loopMode !== 'none');
       $btnLoop.classList.toggle('mp-loop-one', loopMode === 'one');
       save();
     });
