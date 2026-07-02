@@ -1,0 +1,210 @@
+{
+  "result": {
+    "id": "bafd954c-9ac3-49bc-8210-e2279bcd9979",
+    "name": "qiumo-site",
+    "subdomain": "qiumo-site.pages.dev",
+    "domains": [
+      "qiumo-site.pages.dev"
+    ],
+    "build_config": {
+      "web_analytics_tag": null,
+      "web_analytics_token": null
+    },
+    "deployment_configs": {
+      "preview": {
+        "env_vars": {
+          "ADMIN_SECRET": {
+            "type": "secret_text",
+            "value": ""
+          },
+          "SUPABASE_SERVICE_KEY": {
+            "type": "secret_text",
+            "value": ""
+          }
+        },
+        "fail_open": true,
+        "always_use_latest_compatibility_date": false,
+        "compatibility_date": "2026-07-01",
+        "compatibility_flags": [],
+        "build_image_major_version": 3,
+        "usage_model": "standard"
+      },
+      "production": {
+        "env_vars": {
+          "ADMIN_SECRET": {
+            "type": "secret_text",
+            "value": ""
+          },
+          "SUPABASE_SERVICE_KEY": {
+            "type": "secret_text",
+            "value": ""
+          }
+        },
+        "fail_open": true,
+        "always_use_latest_compatibility_date": false,
+        "compatibility_date": "2026-07-01",
+        "compatibility_flags": [],
+        "build_image_major_version": 3,
+        "usage_model": "standard"
+      }
+    },
+    "latest_deployment": {
+      "id": "8f72549f-7885-4fb3-b42b-18ca748ccbb2",
+      "short_id": "8f72549f",
+      "project_id": "bafd954c-9ac3-49bc-8210-e2279bcd9979",
+      "project_name": "qiumo-site",
+      "environment": "production",
+      "url": "https://8f72549f.qiumo-site.pages.dev",
+      "created_on": "2026-07-01T13:44:03.286673Z",
+      "modified_on": "2026-07-01T13:44:04.466541Z",
+      "latest_stage": {
+        "name": "deploy",
+        "started_on": null,
+        "ended_on": "2026-07-01T13:44:04.466541Z",
+        "status": "success"
+      },
+      "deployment_trigger": {
+        "type": "ad_hoc",
+        "metadata": {
+          "branch": "main",
+          "commit_hash": "ea768b0889a5ee36e264d9cb5391dd7d06f39985",
+          "commit_message": "fix: grant service_role table permissions",
+          "commit_dirty": false
+        }
+      },
+      "stages": [
+        {
+          "name": "queued",
+          "started_on": "2026-07-01T13:44:03.286673Z",
+          "ended_on": null,
+          "status": "active"
+        },
+        {
+          "name": "initialize",
+          "started_on": null,
+          "ended_on": null,
+          "status": "idle"
+        },
+        {
+          "name": "clone_repo",
+          "started_on": null,
+          "ended_on": null,
+          "status": "idle"
+        },
+        {
+          "name": "build",
+          "started_on": null,
+          "ended_on": null,
+          "status": "idle"
+        },
+        {
+          "name": "deploy",
+          "started_on": null,
+          "ended_on": "2026-07-01T13:44:04.466541Z",
+          "status": "success"
+        }
+      ],
+      "build_config": {
+        "build_command": null,
+        "destination_dir": null,
+        "build_caching": null,
+        "root_dir": null,
+        "web_analytics_tag": null,
+        "web_analytics_token": null
+      },
+      "env_vars": {},
+      "compatibility_date": "2026-07-01",
+      "compatibility_flags": [],
+      "build_image_major_version": 3,
+      "usage_model": null,
+      "aliases": null,
+      "is_skipped": false,
+      "production_branch": "main",
+      "uses_functions": false
+    },
+    "canonical_deployment": {
+      "id": "8f72549f-7885-4fb3-b42b-18ca748ccbb2",
+      "short_id": "8f72549f",
+      "project_id": "bafd954c-9ac3-49bc-8210-e2279bcd9979",
+      "project_name": "qiumo-site",
+      "environment": "production",
+      "url": "https://8f72549f.qiumo-site.pages.dev",
+      "created_on": "2026-07-01T13:44:03.286673Z",
+      "modified_on": "2026-07-01T13:44:04.466541Z",
+      "latest_stage": {
+        "name": "deploy",
+        "started_on": null,
+        "ended_on": "2026-07-01T13:44:04.466541Z",
+        "status": "success"
+      },
+      "deployment_trigger": {
+        "type": "ad_hoc",
+        "metadata": {
+          "branch": "main",
+          "commit_hash": "ea768b0889a5ee36e264d9cb5391dd7d06f39985",
+          "commit_message": "fix: grant service_role table permissions",
+          "commit_dirty": false
+        }
+      },
+      "stages": [
+        {
+          "name": "queued",
+          "started_on": "2026-07-01T13:44:03.286673Z",
+          "ended_on": null,
+          "status": "active"
+        },
+        {
+          "name": "initialize",
+          "started_on": null,
+          "ended_on": null,
+          "status": "idle"
+        },
+        {
+          "name": "clone_repo",
+          "started_on": null,
+          "ended_on": null,
+          "status": "idle"
+        },
+        {
+          "name": "build",
+          "started_on": null,
+          "ended_on": null,
+          "status": "idle"
+        },
+        {
+          "name": "deploy",
+          "started_on": null,
+          "ended_on": "2026-07-01T13:44:04.466541Z",
+          "status": "success"
+        }
+      ],
+      "build_config": {
+        "build_command": null,
+        "destination_dir": null,
+        "build_caching": null,
+        "root_dir": null,
+        "web_analytics_tag": null,
+        "web_analytics_token": null
+      },
+      "env_vars": {},
+      "compatibility_date": "2026-07-01",
+      "compatibility_flags": [],
+      "build_image_major_version": 3,
+      "usage_model": null,
+      "aliases": null,
+      "is_skipped": false,
+      "production_branch": "main",
+      "uses_functions": false
+    },
+    "created_on": "2026-07-01T13:43:07.489151Z",
+    "production_branch": "main",
+    "production_script_name": "pages-worker--15729760-production",
+    "preview_script_name": "pages-worker--15729760-preview",
+    "uses_functions": false,
+    "framework": "",
+    "framework_version": ""
+  },
+  "success": true,
+  "errors": [],
+  "messages": []
+}

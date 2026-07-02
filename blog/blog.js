@@ -72,7 +72,7 @@
                 this.state.view = 'list';
                 this.renderList();
             } catch (err) {
-                this.renderError(err.message || '加载博客列表失败，请检查环境变量是否配置');
+                this.renderError(err.message || '加载博客列表失败');
             } finally {
                 this.state.isLoading = false;
             }
@@ -81,7 +81,7 @@
         async loadPost(slug) {
             if (this.state.isLoading) return;
             this.state.isLoading = true;
-            if (this.container) this.container.innerHTML = ''; // 清除默认骨架屏
+            if (this.container) this.container.innerHTML = '';
 
             try {
                 const res = await fetch(`${API_BASE}/posts?slug=${encodeURIComponent(slug)}`);
@@ -122,7 +122,7 @@
             let html = '<div class="blog-list">';
             this.state.posts.forEach(post => {
                 html += `
-                    <div class="blog-card reveal-up" data-slug="${post.slug}">
+                    <div class="blog-card" data-slug="${post.slug}">
                         <div class="blog-card-meta">
                             <span>发布于 ${formatDate(post.created_at)}</span>
                         </div>
