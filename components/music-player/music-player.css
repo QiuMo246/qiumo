@@ -59,7 +59,8 @@
 }
 
 .mp-toggle:active {
-  transform: scale(0.95);
+  transform: scale(0.92);
+  transition-duration: 0.05s;
 }
 
 .mp-toggle::before {
@@ -189,8 +190,8 @@
   background: var(--mp-gradient);
   border-radius: 4px;
   width: 0%;
-  transition: width 0.1s linear;
   position: relative;
+  will-change: width;
 }
 
 .mp-progress-fill::after {
@@ -254,6 +255,7 @@
 
 .mp-btn:active {
   transform: scale(0.9);
+  transition-duration: 0.05s;
 }
 
 .mp-btn-play {
@@ -269,6 +271,12 @@
   background: var(--mp-gradient);
   box-shadow: 0 4px 24px var(--mp-accent-glow);
   transform: scale(1.1);
+}
+
+.mp-btn-play:active {
+  transform: scale(0.92);
+  box-shadow: 0 1px 8px var(--mp-accent-glow);
+  filter: brightness(0.9);
 }
 
 /* Shuffle & Loop buttons */
@@ -332,6 +340,23 @@
   line-height: 1;
 }
 
+/* --- Spectrum Canvas --- */
+.mp-spectrum {
+  width: 100%;
+  height: 56px;
+  border-radius: 8px;
+  margin-bottom: 14px;
+  display: block;
+  flex-shrink: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s var(--mp-ease);
+}
+
+.mp-panel.mp-open .mp-spectrum {
+  opacity: 1;
+}
+
 /* --- Volume Row --- */
 .mp-volume-row {
   display: flex;
@@ -369,17 +394,23 @@
 .mp-volume-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   background: var(--mp-accent);
   box-shadow: 0 0 8px var(--mp-accent-glow);
-  cursor: pointer;
-  transition: transform 0.2s var(--mp-ease-spring);
+  cursor: grab;
+  transition: transform 0.15s var(--mp-ease-spring);
+  will-change: transform;
 }
 
 .mp-volume-slider::-webkit-slider-thumb:hover {
   transform: scale(1.3);
+}
+
+.mp-volume-slider::-webkit-slider-thumb:active {
+  cursor: grabbing;
+  transform: scale(1.1);
 }
 
 .mp-volume-slider::-moz-range-thumb {
@@ -665,7 +696,8 @@
   .mp-panel,
   .mp-btn,
   .mp-progress-fill,
-  .mp-disc {
+  .mp-disc,
+  .mp-spectrum {
     animation: none !important;
     transition-duration: 0.01ms !important;
   }

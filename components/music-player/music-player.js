@@ -109,6 +109,7 @@
   const LS_KEY = 'mp_state_v2';
   const audio = new Audio();
   audio.preload = 'metadata';
+  audio.crossOrigin = 'anonymous';
 
   let activeCategory = 'pop';
   let currentIndex = 0;
@@ -198,6 +199,224 @@
         loopMode = s.loopMode;
       }
     } catch (_) {}
+  }
+
+  /* ============================================
+     MODULE: Spectrum Visualizer (Web Audio API)
+     ============================================ */
+  const SpectrumVisualizer = {
+    canvas: null,
+    ctx: null,
+    audioContext: null,
+    analyser: null,
+    source: null,
+    animFrame: null,
+    bars: 40,
+    initialized: false,
+    connected: false,
+    dataArray: null,
+    audioEl: null,
+    w: 0,
+    h: 0,
+
+    init(canvasEl, audioEl) {
+      this.canvas = canvasEl;
+      this.audioEl = audioEl;
+      this.ctx = canvasEl.getContext('2d');
+      this._resize();
+    },
+
+    _resize() {
+      if (!this.canvas || !this.ctx) return;
+      var dpr = window.devicePixelRatio || 1;
+      var rect = this.canvas.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      var newW = Math.round(rect.width * dpr);
+      var newH = Math.round(rect.height * dpr);
+      if (this.canvas.width === newW && this.canvas.height === newH) return;
+      this.canvas.width = newW;
+      this.canvas.height = newH;
+      this.ctx.scale(dpr, dpr);
+      this.w = rect.width;
+      this.h = rect.height;
+    },
+
+    _initAudioContext() {
+      try {
+        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        this.analyser = this.audioContext.createAnalyser();
+        this.analyser.fftSize = 256;
+        var bufferLength = this.analyser.frequencyBinCount;
+        this.dataArray = new Uint8Array(bufferLength);
+        this.initialized = true;
+      } catch (e) {
+        console.warn('[Spectrum] AudioContext init failed:', e);
+      }
+    },
+
+    _connect() {
+      if (this.connected || !this.initialized) return;
+      try {
+        this.source = this.audioContext.createMediaElementSource(this.audioEl);
+        this.source.connect(this.analyser);
+        this.analyser.connect(this.audioContext.destination);
+        this.connected = true;
+      } catch (e) {
+        console.warn('[Spectrum] Connect failed:', e);
+      }
+    },
+
+    ensureAudioGraph(callback) {
+      if (!this.canvas || !this.ctx) { if (callback) callback(); return; }
+      if (this.connected) { if (callback) callback(); return; }
+      /* Skip Web Audio API for file:// protocol (CORS restriction) */
+      if (location.protocol === 'file:') { if (callback) callback(); return; }
+      if (!this.initialized) this._initAudioContext();
+      var self = this;
+      function doConnect() {
+        self._connect();
+        if (callback) callback();
+      }
+      if (this.audioContext && this.audioContext.state === 'suspended') {
+        this.audioContext.resume().then(doConnect);
+      } else {
+        doConnect();
+      }
+    },
+
+    start() {
+      if (!this.canvas || !this.ctx) return;
+      /* file:// protocol — skip canvas animation (no audio data due to CORS) */
+      if (location.protocol === 'file:') return;
+      var self = this;
+      function beginAnimate() {
+        if (self.animFrame === null) {
+          self._resize();
+          self._animate();
+        }
+      }
+      this.ensureAudioGraph(beginAnimate);
+    },
+
+    stop() {
+      if (this.animFrame) {
+        cancelAnimationFrame(this.animFrame);
+        this.animFrame = null;
+      }
+      if (this.ctx && this.canvas) {
+        this.ctx.clearRect(0, 0, this.w, this.h);
+      }
+    },
+
+    _draw() {
+      if (!this.ctx || !this.canvas || !this.w || !this.h || !this.analyser) return;
+      var ctx = this.ctx;
+      var w = this.w;
+      var h = this.h;
+      ctx.clearRect(0, 0, w, h);
+
+      this.analyser.getByteFrequencyData(this.dataArray);
+
+      var barCount = this.bars;
+      var step = Math.floor(this.dataArray.length / barCount);
+      var barWidth = (w / barCount) * 0.65;
+      var gap = (w / barCount) * 0.35;
+      var radius = 2;
+
+      for (var i = 0; i < barCount; i++) {
+        var sum = 0;
+        for (var j = 0; j < step; j++) {
+          sum += this.dataArray[i * step + j];
+        }
+        var avg = sum / step;
+        var pct = avg / 255;
+        var barHeight = Math.max(1, pct * h * 0.85);
+        var x = i * (barWidth + gap) + gap / 2;
+        var y = h - barHeight;
+
+        ctx.beginPath();
+        ctx.moveTo(x + radius, y);
+        ctx.lineTo(x + barWidth - radius, y);
+        ctx.quadraticCurveTo(x + barWidth, y, x + barWidth, y + radius);
+        ctx.lineTo(x + barWidth, h);
+        ctx.lineTo(x, h);
+        ctx.lineTo(x, y + radius);
+        ctx.quadraticCurveTo(x, y, x + radius, y);
+        ctx.closePath();
+
+        var gradient = ctx.createLinearGradient(x, y, x, h);
+        gradient.addColorStop(0, '#a855f7');
+        gradient.addColorStop(0.5, '#7c3aed');
+        gradient.addColorStop(1, '#6366f1');
+        ctx.fillStyle = gradient;
+        ctx.fill();
+      }
+    },
+
+    _animate() {
+      this._draw();
+      this.animFrame = requestAnimationFrame(this._animate.bind(this));
+    },
+
+    dispose() {
+      this.stop();
+      if (this.source) {
+        try { this.source.disconnect(); } catch (e) {}
+        this.source = null;
+      }
+      if (this.analyser) {
+        try { this.analyser.disconnect(); } catch (e) {}
+        this.analyser = null;
+      }
+      if (this.audioContext) {
+        this.audioContext.close().catch(function () {});
+        this.audioContext = null;
+      }
+      this.initialized = false;
+      this.connected = false;
+      this.dataArray = null;
+      this.canvas = null;
+      this.ctx = null;
+    },
+  };
+
+  /* ============================================
+     FADE TRANSITION HELPERS
+     ============================================ */
+  function fadeOut(duration, callback) {
+    var startVol = audio.volume;
+    if (startVol === 0) { if (callback) callback(); return; }
+    var startTime = performance.now();
+    function step(now) {
+      var elapsed = now - startTime;
+      var progress = Math.min(elapsed / duration, 1);
+      var eased = 1 - Math.pow(1 - progress, 3);
+      audio.volume = startVol * (1 - eased);
+      if (progress < 1) {
+        requestAnimationFrame(step);
+      } else {
+        audio.volume = 0;
+        if (callback) callback();
+      }
+    }
+    requestAnimationFrame(step);
+  }
+
+  function fadeIn(duration) {
+    if (volume === 0) return;
+    var startTime = performance.now();
+    function step(now) {
+      var elapsed = now - startTime;
+      var progress = Math.min(elapsed / duration, 1);
+      var eased = 1 - Math.pow(1 - progress, 3);
+      audio.volume = volume * eased;
+      if (progress < 1) {
+        requestAnimationFrame(step);
+      } else {
+        audio.volume = volume;
+      }
+    }
+    requestAnimationFrame(step);
   }
 
   /* ============================================
@@ -293,6 +512,9 @@
           '<button class="mp-btn mp-btn-loop' + (loopMode !== 'all' ? ' mp-active' : '') + (loopMode === 'one' ? ' mp-loop-one' : '') + '" id="mp-btn-loop" aria-label="Loop">' + icons.loop + '</button>' +
         '</div>' +
 
+        /* Spectrum */
+        '<canvas class="mp-spectrum" id="mp-spectrum"></canvas>' +
+
         /* Volume */
         '<div class="mp-volume-row">' +
           '<span class="mp-volume-icon" id="mp-volume-icon">' + icons.volHigh + '</span>' +
@@ -334,6 +556,11 @@
     $playlistEl    = el.querySelector('#mp-playlist');
     $btnShuffle    = el.querySelector('#mp-btn-shuffle');
     $btnLoop       = el.querySelector('#mp-btn-loop');
+
+    /* Init spectrum visualizer */
+    var $spectrum = el.querySelector('#mp-spectrum');
+    SpectrumVisualizer.init($spectrum, audio);
+    SpectrumVisualizer._resize();
   }
 
   /* ============================================
@@ -453,19 +680,34 @@
     if (tracks.length === 0) return;
 
     currentIndex = ((index % tracks.length) + tracks.length) % tracks.length;
-    audio.src = tracks[currentIndex].src;
-    audio.load();
-    updateTitle();
-    highlightPlaylist();
-    scrollToActiveTrack();
-    updateMediaSession();
-    updateProgress();
-    save();
-    if (autoPlay) {
-      audio.play().then(function () {
-        isPlaying = true;
-        updatePlayBtn();
-      }).catch(function () {});
+
+    function doLoad() {
+      audio.src = tracks[currentIndex].src;
+      audio.load();
+      updateTitle();
+      highlightPlaylist();
+      scrollToActiveTrack();
+      updateMediaSession();
+      updateProgress();
+      save();
+
+      if (autoPlay) {
+        SpectrumVisualizer.ensureAudioGraph(function () {
+          audio.play().then(function () {
+            isPlaying = true;
+            updatePlayBtn();
+            SpectrumVisualizer.start();
+            if (volume > 0) fadeIn(250);
+          }).catch(function () {});
+        });
+      }
+    }
+
+    if (isPlaying && audio.src && audio.volume > 0) {
+      fadeOut(200, doLoad);
+    } else {
+      audio.volume = volume;
+      doLoad();
     }
   }
 
@@ -480,9 +722,12 @@
       audio.pause();
       isPlaying = false;
     } else {
-      audio.play().then(function () {
-        isPlaying = true;
-      }).catch(function () {});
+      SpectrumVisualizer.ensureAudioGraph(function () {
+        audio.play().then(function () {
+          isPlaying = true;
+          SpectrumVisualizer.start();
+        }).catch(function () {});
+      });
     }
     updatePlayBtn();
   }
@@ -514,7 +759,9 @@
     if (loopMode === 'one') {
       audio.currentTime = 0;
       if (isPlaying) {
-        audio.play().catch(function () {});
+        SpectrumVisualizer.ensureAudioGraph(function () {
+          audio.play().catch(function () {});
+        });
       }
       updateProgress();
       return;
@@ -683,6 +930,7 @@
         audio.src = tracks[0].src;
         audio.load();
         isPlaying = false;
+        SpectrumVisualizer.stop();
         updatePlayBtn();
         updateTitle();
         updateProgress();
@@ -706,12 +954,16 @@
     audio.addEventListener('play', function () {
       isPlaying = true;
       updatePlayBtn();
+      SpectrumVisualizer.ensureAudioGraph(function () {
+        SpectrumVisualizer.start();
+      });
       save();
     });
 
     audio.addEventListener('pause', function () {
       isPlaying = false;
       updatePlayBtn();
+      SpectrumVisualizer.stop();
       save();
     });
 
@@ -760,9 +1012,17 @@
     });
 
     document.addEventListener('visibilitychange', function () {
-      if (document.hidden && isPlaying) {
-        updateProgress();
+      if (document.hidden) {
+        SpectrumVisualizer.stop();
+      } else if (isPlaying) {
+        SpectrumVisualizer._resize();
+        SpectrumVisualizer.start();
       }
+    });
+
+    /* Window resize for spectrum */
+    window.addEventListener('resize', function () {
+      SpectrumVisualizer._resize();
     });
   }
 
