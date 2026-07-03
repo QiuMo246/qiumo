@@ -109,7 +109,6 @@
   const LS_KEY = 'mp_state_v2';
   const audio = new Audio();
   audio.preload = 'metadata';
-  audio.crossOrigin = 'anonymous';
 
   let activeCategory = 'pop';
   let currentIndex = 0;
@@ -120,6 +119,7 @@
   let shuffle = false;
   let loopMode = 'all'; // 'all', 'one', 'none'
   let lastVol = 0.7;
+  let consecutiveErrors = 0;
 
   /* ============================================
      DOM REFS
@@ -733,6 +733,7 @@
   }
 
   function playPrev() {
+    consecutiveErrors = 0;
     if (audio.currentTime > 3) {
       audio.currentTime = 0;
       updateProgress();
@@ -753,6 +754,7 @@
   }
 
   function playNext() {
+    consecutiveErrors = 0;
     var tracks = getTracks();
     if (tracks.length === 0) return;
 
@@ -930,6 +932,7 @@
 
       activeCategory = cat;
       currentIndex = 0;
+      consecutiveErrors = 0;
       refreshPlaylist();
       save();
 
@@ -952,6 +955,7 @@
       var item = e.target.closest('.mp-playlist-item');
       if (!item) return;
       var idx = parseInt(item.getAttribute('data-index'), 10);
+      consecutiveErrors = 0;
       loadTrack(idx, true);
     });
 
@@ -961,6 +965,7 @@
     audio.addEventListener('ended', playNext);
 
     audio.addEventListener('play', function () {
+      consecutiveErrors = 0;
       isPlaying = true;
       updatePlayBtn();
       SpectrumVisualizer.ensureAudioGraph(function () {
@@ -979,6 +984,15 @@
     audio.addEventListener('error', function () {
       var tracks = getTracks();
       if (tracks.length <= 1) return;
+      consecutiveErrors++;
+      if (consecutiveErrors >= tracks.length) {
+        consecutiveErrors = 0;
+        isPlaying = false;
+        updatePlayBtn();
+        SpectrumVisualizer.stop();
+        save();
+        return;
+      }
       playNext();
     });
 
