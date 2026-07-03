@@ -648,6 +648,36 @@
   };
 
   /* ============================================
+     MODULE: Secret Admin (Double-click to reveal)
+     ============================================ */
+  const SecretAdmin = {
+    element: null,
+    section: null,
+    isVisible: false,
+
+    init() {
+      this.element = $('.hero-name');
+      this.section = $('#admin');
+      if (!this.element || !this.section) return;
+      this.bindTrigger();
+    },
+
+    bindTrigger() {
+      this.element.addEventListener('dblclick', (e) => {
+        if (this.isVisible) return;
+        this.isVisible = true;
+        this.section.style.display = 'block';
+        const navHeight = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--nav-height'));
+        const top = this.section.getBoundingClientRect().top + window.scrollY - navHeight - 20;
+        window.scrollTo({ top, behavior: 'smooth' });
+        if (window.Toast) {
+          window.Toast.show('管理面板已开启', 'success');
+        }
+      });
+    },
+  };
+
+  /* ============================================
      INITIALIZE ALL MODULES
      ============================================ */
   function init() {
@@ -663,6 +693,7 @@
     ContactForm.init();
     Toast.init();
     SmoothScroll.init();
+    SecretAdmin.init();
     if (window.Blog) window.Blog.init();
     if (window.Admin) window.Admin.init();
   }
