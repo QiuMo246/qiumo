@@ -1,0 +1,4 @@
+[    6383ms] [LOG] %c JSHandle@node @ https://www.douyin.com/:0
+[    7411ms] [ERROR] The Content Security Policy directive 'upgrade-insecure-requests' is ignored when delivered in a report-only policy. @ https://www.douyin.com/:0
+[    7421ms] [LOG] init slardar @ https://www.douyin.com/:21
+[    7421ms] [LOG] init slardar success @ https://www.douyin.com/:101

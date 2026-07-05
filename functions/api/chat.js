@@ -1,4 +1,5 @@
 const SILICONFLOW_BASE = 'https://api.siliconflow.cn/v1';
+const SUPABASE_URL = 'https://gtockqpvcnwvkpkhqvdv.supabase.co';
 const DAILY_LIMIT = 20;
 
 export async function onRequest(context) {
@@ -72,22 +73,9 @@ export async function onRequest(context) {
     // Increment counter (fire-and-forget)
     incrementCount(env, clientIP).catch(() => {});
 
-    // Stream response back to client
+    // Stream response back to client (passthrough)
     const { readable, writable } = new TransformStream();
-    const writer = writable.getWriter();
-    const encoder = new TextEncoder();
-
-    sfRes.body.pipeTo(new WritableStream({
-      async write(chunk) {
-        await writer.write(encoder.encode(new TextDecoder().decode(chunk, { stream: true })));
-      },
-      async close() {
-        await writer.close();
-      },
-      async abort(err) {
-        await writer.abort(err);
-      },
-    })).catch(() => {});
+    sfRes.body.pipeTo(writable).catch(() => {});
 
     return new Response(readable, {
       headers: {
@@ -104,10 +92,10 @@ export async function onRequest(context) {
 }
 
 async function getRemaining(env, clientIP) {
-  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY) return DAILY_LIMIT;
+  if (!SUPABASE_URL || !env.SUPABASE_SERVICE_KEY) return DAILY_LIMIT;
   try {
     const today = new Date().toISOString().split('T')[0];
-    const url = `${env.SUPABASE_URL}/rest/v1/chat_limits?client_ip=eq.${encodeURIComponent(clientIP)}&chat_date=eq.${today}&select=count`;
+    const url = `${SUPABASE_URL}/rest/v1/chat_limits?client_ip=eq.${encodeURIComponent(clientIP)}&chat_date=eq.${today}&select=count`;
     const res = await fetch(url, {
       headers: supabaseHeaders(env),
     });
@@ -121,12 +109,12 @@ async function getRemaining(env, clientIP) {
 }
 
 async function incrementCount(env, clientIP) {
-  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY) return;
+  if (!SUPABASE_URL || !env.SUPABASE_SERVICE_KEY) return;
   try {
     const today = new Date().toISOString().split('T')[0];
 
     // Try upsert: insert or increment
-    const url = `${env.SUPABASE_URL}/rest/v1/chat_limits`;
+    const url = `${SUPABASE_URL}/rest/v1/chat_limits`;
     const existingRes = await fetch(
       `${url}?client_ip=eq.${encodeURIComponent(clientIP)}&chat_date=eq.${today}&select=id,count`,
       { headers: supabaseHeaders(env) }

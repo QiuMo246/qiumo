@@ -1,0 +1,365 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "秋末" [ref=e4] [cursor=pointer]:
+        - /url: "#hero"
+        - generic [ref=e5]: 秋末
+      - generic [ref=e7]:
+        - link "关于" [ref=e8] [cursor=pointer]:
+          - /url: "#about"
+        - link "项目" [ref=e9] [cursor=pointer]:
+          - /url: "#projects"
+        - link "博客" [ref=e10] [cursor=pointer]:
+          - /url: "#blog"
+        - link "留言" [ref=e11] [cursor=pointer]:
+          - /url: "#guestbook"
+        - link "AI 聊天" [ref=e12] [cursor=pointer]:
+          - /url: "#ai-chat"
+        - link "联系" [ref=e13] [cursor=pointer]:
+          - /url: "#contact"
+  - generic:
+    - generic:
+      - link "关于":
+        - /url: "#about"
+      - link "项目":
+        - /url: "#projects"
+      - link "博客":
+        - /url: "#blog"
+      - link "留言":
+        - /url: "#guestbook"
+      - link "AI 聊天":
+        - /url: "#ai-chat"
+      - link "联系":
+        - /url: "#contact"
+  - generic [ref=e16]:
+    - generic [ref=e17]: 接受新项目中
+    - heading "秋末" [level=1] [ref=e19]:
+      - generic [ref=e20]: 秋末
+    - generic [ref=e21]:
+      - generic [ref=e22]: 一名
+      - generic [ref=e23]: 创意
+      - generic [ref=e24]: "|"
+    - paragraph [ref=e25]: "\"开快车 寻找快乐 你已不再了\""
+    - generic [ref=e26]:
+      - link "查看作品" [ref=e27] [cursor=pointer]:
+        - /url: "#projects"
+        - generic [ref=e28]: 查看作品
+        - img [ref=e29]
+      - link "联系我" [ref=e31] [cursor=pointer]:
+        - /url: "#contact"
+    - generic [ref=e34]: 向下滚动
+  - generic [ref=e36]:
+    - generic [ref=e37]: 关于我
+    - generic [ref=e38]:
+      - img [ref=e42]
+      - generic [ref=e47]:
+        - heading "你好，我是 秋末" [level=2] [ref=e48]
+        - generic [ref=e49]:
+          - paragraph [ref=e50]: 我是一名初中生，热爱编程与设计，喜欢用代码创造有趣的东西。从网页到小工具，每一行代码都是我对这个数字世界的好奇与探索。
+          - paragraph [ref=e51]: 我热衷于前端开发，享受将灵感变为现实的过程。这个网站就是我动手实践的成果，里面藏着我学到的各种技巧和对细节的小执着。
+          - paragraph [ref=e52]: 不写代码的时候，我喜欢听音乐、打打游戏，也爱琢磨各种新奇的技术。未来还很长，希望能做出更多有意思的作品。
+        - generic [ref=e53]:
+          - generic [ref=e54]:
+            - generic [ref=e55]: 3+
+            - generic [ref=e56]: 年经验
+          - generic [ref=e57]:
+            - generic [ref=e58]: 20+
+            - generic [ref=e59]: 个项目
+          - generic [ref=e60]:
+            - generic [ref=e61]: 1,000+
+            - generic [ref=e62]: 杯咖啡
+  - generic [ref=e64]:
+    - generic [ref=e65]: 项目
+    - heading "精选作品" [level=2] [ref=e66]
+    - paragraph [ref=e67]: 我用心打造的一些代表性项目
+    - generic [ref=e68]:
+      - generic [ref=e72] [cursor=pointer]:
+        - generic [ref=e73]: "01"
+        - heading "antigravity" [level=3] [ref=e74]
+        - paragraph [ref=e75]: OpenCode里对接的Google生态AI模型服务
+        - generic [ref=e76]:
+          - generic [ref=e77]: TypeScript
+          - generic [ref=e78]: Shell
+          - generic [ref=e79]: JavaScript
+        - button "查看详情" [ref=e81]:
+          - text: 查看详情
+          - img [ref=e82]
+      - generic [ref=e88] [cursor=pointer]:
+        - generic [ref=e89]: "02"
+        - heading "Artisan" [level=3] [ref=e90]
+        - paragraph [ref=e91]: 免费的沉浸式氛围感音乐播放器
+        - generic [ref=e92]:
+          - generic [ref=e93]: HTML
+          - generic [ref=e94]: JavaScript
+          - generic [ref=e95]: NSIS
+        - button "查看详情" [ref=e97]:
+          - text: 查看详情
+          - img [ref=e98]
+      - generic [ref=e104] [cursor=pointer]:
+        - generic [ref=e105]: "03"
+        - heading "Breeze" [level=3] [ref=e106]
+        - paragraph [ref=e107]: 专门给图片添加人眼完全看不见的隐形水印
+        - generic [ref=e109]: Python
+        - button "查看详情" [ref=e111]:
+          - text: 查看详情
+          - img [ref=e112]
+  - generic [ref=e116]:
+    - generic [ref=e117]: 留言板
+    - heading "与我交流" [level=2] [ref=e118]
+    - paragraph [ref=e119]: 欢迎留下你的足迹，每一条留言我都会认真阅读。
+    - generic [ref=e120]:
+      - generic [ref=e122]:
+        - textbox "你的昵称" [ref=e123]:
+          - /placeholder: " "
+        - generic: 你的昵称
+      - generic [ref=e124]:
+        - textbox "写下你想说的... 支持 Markdown" [ref=e125]:
+          - /placeholder: " "
+        - generic: 写下你想说的... 支持 Markdown
+        - generic [ref=e126]:
+          - generic [ref=e127]:
+            - button "表情" [ref=e128] [cursor=pointer]:
+              - img [ref=e129]
+            - button "预览 Markdown" [ref=e132] [cursor=pointer]:
+              - img [ref=e133]
+          - generic [ref=e136]: 0 / 1000
+      - button "发表留言" [ref=e137] [cursor=pointer]:
+        - generic [ref=e138]: 发表留言
+    - generic [ref=e139]:
+      - button "最新" [ref=e140] [cursor=pointer]
+      - button "热门" [ref=e141] [cursor=pointer]
+      - generic [ref=e242]: 4 条留言
+    - generic [ref=e142]:
+      - generic [ref=e243]:
+        - generic [ref=e244]:
+          - generic [ref=e245]: 你
+          - generic [ref=e246]:
+            - generic [ref=e247]: 你猜
+            - generic [ref=e248]: 3 天前
+        - paragraph [ref=e250]: 你为什么要用英语？
+        - generic [ref=e251]:
+          - button "0" [ref=e252] [cursor=pointer]:
+            - img [ref=e253]
+            - generic [ref=e255]: "0"
+          - button "回复" [ref=e256] [cursor=pointer]:
+            - img [ref=e257]
+            - generic [ref=e259]: 回复
+        - generic [ref=e261]:
+          - generic [ref=e262]:
+            - generic [ref=e263]: q
+            - generic [ref=e264]:
+              - generic [ref=e265]: qiumo
+              - generic [ref=e266]: 3 天前
+          - paragraph [ref=e268]: 抖音搬的
+          - button "1" [ref=e270] [cursor=pointer]:
+            - img [ref=e271]
+            - generic [ref=e273]: "1"
+      - generic [ref=e274]:
+        - generic [ref=e275]:
+          - generic [ref=e276]: 你
+          - generic [ref=e277]:
+            - generic [ref=e278]: 你猜
+            - generic [ref=e279]: 3 天前
+        - paragraph [ref=e281]: QAQ😍
+        - generic [ref=e282]:
+          - button "0" [ref=e283] [cursor=pointer]:
+            - img [ref=e284]
+            - generic [ref=e286]: "0"
+          - button "回复" [ref=e287] [cursor=pointer]:
+            - img [ref=e288]
+            - generic [ref=e290]: 回复
+      - generic [ref=e291]:
+        - generic [ref=e292]:
+          - generic [ref=e293]: 你
+          - generic [ref=e294]:
+            - generic [ref=e295]: 你猜
+            - generic [ref=e296]: 3 天前
+        - paragraph [ref=e298]: 哎，这个发评论还挺好玩的
+        - generic [ref=e299]:
+          - button "0" [ref=e300] [cursor=pointer]:
+            - img [ref=e301]
+            - generic [ref=e303]: "0"
+          - button "回复" [ref=e304] [cursor=pointer]:
+            - img [ref=e305]
+            - generic [ref=e307]: 回复
+      - generic [ref=e308]:
+        - generic [ref=e309]:
+          - generic [ref=e310]: Q
+          - generic [ref=e311]:
+            - generic [ref=e312]: QiuMo
+            - generic [ref=e313]: 4 天前
+        - paragraph [ref=e315]: QAQ🤩
+        - generic [ref=e316]:
+          - button "5" [ref=e317] [cursor=pointer]:
+            - img [ref=e318]
+            - generic [ref=e320]: "5"
+          - button "回复" [ref=e321] [cursor=pointer]:
+            - img [ref=e322]
+            - generic [ref=e324]: 回复
+  - generic [ref=e144]:
+    - generic [ref=e145]: 我的博客
+    - heading "开发记录 & 生活随笔" [level=2] [ref=e146]
+    - paragraph [ref=e147]: 记录学习前端开发的过程，分享独立产品设计与开发的思考。
+    - generic [ref=e326] [cursor=pointer]:
+      - generic [ref=e328]: 发布于 2026-07-01
+      - heading "Do you miss our childhood?" [level=3] [ref=e329]
+      - paragraph [ref=e330]: 点击阅读全文...
+      - generic [ref=e331]:
+        - generic [ref=e332]: 阅读全文
+        - img [ref=e333]
+  - generic [ref=e151]:
+    - generic [ref=e152]: AI 聊天
+    - heading "智能对话" [level=2] [ref=e153]
+    - paragraph [ref=e154]: 基于 SiliconFlow 的 AI 助手，每日 20 次免费对话。
+    - generic [ref=e155]:
+      - generic [ref=e156]:
+        - generic [ref=e159]: AI 助手
+        - generic [ref=e160]: 今日剩余：20 次
+      - generic [ref=e161]:
+        - generic [ref=e162]:
+          - generic [ref=e163]: AI
+          - generic [ref=e164]: 你好！我是 AI 助手，有什么可以帮你的吗？
+        - generic [ref=e335]:
+          - generic [ref=e336]: 你
+          - generic [ref=e337]: hello
+        - generic [ref=e338]:
+          - generic [ref=e339]: "!"
+          - generic [ref=e340]: API 未配置
+        - generic [ref=e341]:
+          - generic [ref=e342]: 你
+          - generic [ref=e343]: 你好，请用中文介绍一下你自己
+        - generic [ref=e344]:
+          - generic [ref=e345]: "!"
+          - generic [ref=e346]: API 未配置
+      - generic [ref=e165]:
+        - generic [ref=e166]:
+          - textbox "输入你的问题..." [ref=e167]
+          - button "发送" [ref=e168] [cursor=pointer]:
+            - img [ref=e169]
+        - generic [ref=e172]: 按 Enter 发送，Shift+Enter 换行
+  - generic [ref=e174]:
+    - generic [ref=e175]: 联系
+    - heading "与我取得联系" [level=2] [ref=e176]
+    - paragraph [ref=e177]: 有项目想法或只是想聊聊天？期待你的来信。
+    - generic [ref=e178]:
+      - generic [ref=e180]:
+        - link "邮箱 13912037680@163.com" [ref=e181] [cursor=pointer]:
+          - /url: mailto:13912037680@163.com
+          - img [ref=e183]
+          - generic [ref=e186]:
+            - generic [ref=e187]: 邮箱
+            - generic [ref=e188]: 13912037680@163.com
+        - link "Gmail moqiu846@gmail.com" [ref=e189] [cursor=pointer]:
+          - /url: mailto:moqiu846@gmail.com
+          - img [ref=e191]
+          - generic [ref=e194]:
+            - generic [ref=e195]: Gmail
+            - generic [ref=e196]: moqiu846@gmail.com
+        - link "X (Twitter) @QiuMo157440" [ref=e197] [cursor=pointer]:
+          - /url: https://x.com/QiuMo157440
+          - img [ref=e199]
+          - generic [ref=e201]:
+            - generic [ref=e202]: X (Twitter)
+            - generic [ref=e203]: "@QiuMo157440"
+        - link "抖音 秋末的主页" [ref=e204] [cursor=pointer]:
+          - /url: https://www.douyin.com/user/MS4wLjABAAAAmT34BG5gS93p8BQNPpxFPlVybDfzPA43hf9Cg-5tMzycVYyAmaQeiPdAFB79Mexy?from_tab_name=main
+          - img [ref=e206]
+          - generic [ref=e208]:
+            - generic [ref=e209]: 抖音
+            - generic [ref=e210]: 秋末的主页
+        - link "小红书 秋末的主页" [ref=e211] [cursor=pointer]:
+          - /url: https://www.xiaohongshu.com/user/profile/5f5e5e5e010101
+          - img [ref=e213]
+          - generic [ref=e215]:
+            - generic [ref=e216]: 小红书
+            - generic [ref=e217]: 秋末的主页
+      - generic [ref=e218]:
+        - generic [ref=e219]:
+          - textbox "你的名字" [ref=e220]:
+            - /placeholder: " "
+          - generic: 你的名字
+        - generic [ref=e221]:
+          - textbox "你的邮箱" [ref=e222]:
+            - /placeholder: " "
+          - generic: 你的邮箱
+        - generic [ref=e223]:
+          - textbox "你的留言" [ref=e224]:
+            - /placeholder: " "
+          - generic: 你的留言
+        - button "发送消息" [ref=e225] [cursor=pointer]:
+          - generic [ref=e226]: 发送消息
+  - contentinfo [ref=e227]:
+    - generic [ref=e229]:
+      - paragraph [ref=e230]: © 2026 秋末. 用心构建.
+      - paragraph [ref=e231]: 由 秋末 设计 & 开发
+  - generic:
+    - generic:
+      - button "Close modal":
+        - img
+  - button "返回顶部" [ref=e232] [cursor=pointer]:
+    - img [ref=e233]
+  - generic [ref=e235]:
+    - button "Toggle music player" [ref=e236] [cursor=pointer]:
+      - img [ref=e238]
+    - generic:
+      - generic:
+        - generic: payphone
+        - generic: from秋末 · 流行
+      - generic:
+        - generic:
+          - generic: 0:00
+          - generic: 0:00
+      - generic:
+        - button "Shuffle":
+          - img
+        - button "Previous":
+          - img
+        - button "Play":
+          - img
+        - button "Next":
+          - img
+        - button "Loop":
+          - img
+      - generic:
+        - generic:
+          - img
+        - slider: "0.7"
+      - generic:
+        - button "🎤 说唱 6":
+          - generic: 🎤
+          - generic: 说唱
+          - generic: "6"
+        - button "🎵 流行 3":
+          - generic: 🎵
+          - generic: 流行
+          - generic: "3"
+        - button "🎸 摇滚 1":
+          - generic: 🎸
+          - generic: 摇滚
+          - generic: "1"
+        - button "🎹 纯音乐 1":
+          - generic: 🎹
+          - generic: 纯音乐
+          - generic: "1"
+        - button "(ﾟω´) (ﾟω´) 4":
+          - generic: (ﾟω´)
+          - generic: (ﾟω´)
+          - generic: "4"
+      - generic:
+        - generic:
+          - generic: 流行
+          - generic: 3 首
+        - generic:
+          - generic:
+            - generic: payphone
+            - generic: from秋末
+        - generic:
+          - generic: "2"
+          - generic:
+            - generic: maybe
+            - generic: from秋末
+        - generic:
+          - generic: "3"
+          - generic:
+            - generic: 零距离的思念
+            - generic: from秋末

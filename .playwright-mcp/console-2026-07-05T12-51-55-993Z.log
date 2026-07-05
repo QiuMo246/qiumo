@@ -1,0 +1,5 @@
+[     925ms] [ERROR] Error: <path> attribute d: Expected arc flag ('0' or '1'), "… 6.34 6.34 6.34 6.34 6.34 6.34-6…". @ https://79f07e3f.qiumo-site.pages.dev/:378
+[    1529ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "new-password"): (More info: https://goo.gl/9p2vKq) %o @ https://79f07e3f.qiumo-site.pages.dev/:0
+[   29783ms] [ERROR] Failed to load resource: the server responded with a status of 500 () @ https://79f07e3f.qiumo-site.pages.dev/api/chat:0
+[   43680ms] [ERROR] Failed to load resource: the server responded with a status of 500 () @ https://79f07e3f.qiumo-site.pages.dev/api/chat:0
+[   75544ms] [ERROR] Failed to load resource: the server responded with a status of 500 () @ https://79f07e3f.qiumo-site.pages.dev/api/chat:0
