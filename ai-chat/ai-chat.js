@@ -178,6 +178,7 @@
         const decoder = new TextDecoder();
         let fullContent = '';
         let buffer = '';
+        let isFirstChunk = true;
 
         while (true) {
           const { done, value } = await reader.read();
@@ -193,10 +194,16 @@
             if (data === '[DONE]') continue;
             try {
               const parsed = JSON.parse(data);
-              const delta = parsed.choices?.[0]?.delta?.content || '';
+              let delta = parsed.choices?.[0]?.delta?.content || '';
               if (delta) {
-                fullContent += delta;
-                this.updateLastMessage(fullContent);
+                if (isFirstChunk) {
+                  delta = delta.replace(/^\n+/, '');
+                  isFirstChunk = false;
+                }
+                if (delta) {
+                  fullContent += delta;
+                  this.updateLastMessage(fullContent);
+                }
               }
             } catch {}
           }
