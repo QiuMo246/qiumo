@@ -1,3 +1,6 @@
 {
-  "private": true
+  "private": true,
+  "dependencies": {
+    "gsap": "^3.15.0"
+  }
 }

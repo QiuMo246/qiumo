@@ -1248,25 +1248,43 @@ input, textarea {
 }
 
 /* ============================================
+   SCROLL PROGRESS BAR
+   ============================================ */
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+  transform-origin: left;
+  transform: scaleX(0);
+  z-index: 1000;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+
+/* ============================================
    SCROLL REVEAL ANIMATIONS
    ============================================ */
 .reveal-up,
 .reveal-left,
 .reveal-right {
   opacity: 0;
-  transition: all 0.8s var(--ease-out);
+  transition: opacity 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              transform 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .reveal-up {
-  transform: translateY(40px);
+  transform: translateY(50px);
 }
 
 .reveal-left {
-  transform: translateX(-40px);
+  transform: translateX(-50px);
 }
 
 .reveal-right {
-  transform: translateX(40px);
+  transform: translateX(50px);
 }
 
 .reveal-up.revealed,
@@ -1276,11 +1294,39 @@ input, textarea {
   transform: translate(0, 0);
 }
 
-/* Staggered children */
-.reveal-up:nth-child(2) { transition-delay: 0.08s; }
-.reveal-up:nth-child(3) { transition-delay: 0.16s; }
-.reveal-up:nth-child(4) { transition-delay: 0.24s; }
-.reveal-up:nth-child(5) { transition-delay: 0.32s; }
+.reveal-up:nth-child(2) { transition-delay: 0.1s; }
+.reveal-up:nth-child(3) { transition-delay: 0.2s; }
+.reveal-up:nth-child(4) { transition-delay: 0.3s; }
+.reveal-up:nth-child(5) { transition-delay: 0.4s; }
+
+.reveal-up.scale-in {
+  transition: opacity 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              transform 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transform: translateY(30px) scale(0.95);
+}
+.reveal-up.scale-in.revealed {
+  transform: translateY(0) scale(1);
+}
+
+.reveal-up.fade-in {
+  transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transform: none;
+}
+
+.section-label,
+.section-desc {
+  opacity: 0;
+  transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transform: translateY(30px);
+}
+.section-label.revealed,
+.section-desc.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+
 
 /* ============================================
    RESPONSIVE DESIGN
@@ -1449,6 +1495,42 @@ input, textarea {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-tertiary);
+}
+
+/* ============================================
+   BACK TO TOP
+   ============================================ */
+.back-to-top {
+  position: fixed;
+  bottom: 80px;
+  right: 24px;
+  z-index: 2000;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  backdrop-filter: blur(12px);
+  color: var(--text-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: var(--shadow-md);
+}
+
+.back-to-top.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.back-to-top:hover {
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
 }
 
 /* ============================================

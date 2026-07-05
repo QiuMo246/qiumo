@@ -20,6 +20,30 @@
             editingPost: null // null if creating new
         },
 
+        confirm(msg) {
+            return new Promise(function (resolve) {
+                var overlay = document.createElement('div');
+                overlay.className = 'admin-confirm-overlay';
+                overlay.innerHTML =
+                    '<div class="admin-confirm-box">' +
+                        '<p class="admin-confirm-msg">' + msg + '</p>' +
+                        '<div class="admin-confirm-actions">' +
+                            '<button class="admin-confirm-cancel">取消</button>' +
+                            '<button class="admin-confirm-ok">确定</button>' +
+                        '</div>' +
+                    '</div>';
+                overlay.querySelector('.admin-confirm-ok').addEventListener('click', function () {
+                    overlay.remove();
+                    resolve(true);
+                });
+                overlay.querySelector('.admin-confirm-cancel').addEventListener('click', function () {
+                    overlay.remove();
+                    resolve(false);
+                });
+                document.body.appendChild(overlay);
+            });
+        },
+
         init() {
             this.container = $('#admin-container');
             if (!this.container) return;
@@ -100,7 +124,7 @@
                 this.state.isLoggedIn = true;
                 this.showDashboard();
             } catch (err) {
-                alert(err.message);
+                if (window.Toast) window.Toast.show('登录失败: ' + err.message, 'error');
             }
         },
 
@@ -131,7 +155,8 @@
         },
 
         async deleteComment(id) {
-            if (!confirm('确定要删除这条评论吗？此操作无法恢复。')) return;
+            var self = this;
+            if (!await self.confirm('确定要删除这条评论吗？此操作无法恢复。')) return;
 
             try {
                 const res = await fetch(`${API_BASE}/admin/comments?id=${id}`, {
@@ -139,9 +164,9 @@
                     headers: getAuthHeader()
                 });
                 if (!res.ok) throw new Error('删除失败');
-                this.loadComments();
+                self.loadComments();
             } catch (err) {
-                alert(err.message);
+                if (window.Toast) window.Toast.show('删除失败: ' + err.message, 'error');
             }
         },
 
@@ -162,7 +187,8 @@
         },
 
         async deletePost(id) {
-            if (!confirm('确定要删除这篇文章吗？此操作无法恢复。')) return;
+            var self = this;
+            if (!await self.confirm('确定要删除这篇文章吗？此操作无法恢复。')) return;
 
             try {
                 const res = await fetch(`${API_BASE}/admin/posts?id=${id}`, {
@@ -170,9 +196,9 @@
                     headers: getAuthHeader()
                 });
                 if (!res.ok) throw new Error('删除失败');
-                this.loadPosts();
+                self.loadPosts();
             } catch (err) {
-                alert(err.message);
+                if (window.Toast) window.Toast.show('删除失败: ' + err.message, 'error');
             }
         },
 
@@ -195,7 +221,7 @@
             const published = $('#editor-published').checked;
 
             if (!title || !slug || !content) {
-                alert('请填写标题、路径和内容');
+                if (window.Toast) window.Toast.show('请填写标题、路径和内容', 'error');
                 return;
             }
 
@@ -220,7 +246,7 @@
                 this.state.view = 'posts';
                 this.loadPosts();
             } catch (err) {
-                alert(err.message);
+                if (window.Toast) window.Toast.show('保存失败: ' + err.message, 'error');
             }
         },
 

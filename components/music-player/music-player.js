@@ -124,7 +124,7 @@
   /* ============================================
      DOM REFS
      ============================================ */
-  let $root, $toggle, $panel, $title, $progressFill, $progressBar;
+  let $root, $toggle, $panel, $title, $progressFill, $progressBar, $progressTooltip;
   let $timeNow, $timeTotal, $btnPrev, $btnPlay, $btnNext;
   let $volumeIcon, $volumeSlider, $playlistEl, $categoriesEl, $artistEl;
   let $btnShuffle, $btnLoop;
@@ -355,6 +355,10 @@
 
     _animate() {
       this._draw();
+      if (window.MusicPlayer && !window.MusicPlayer.panelOpen) {
+        this.stop();
+        return;
+      }
       this.animFrame = requestAnimationFrame(this._animate.bind(this));
     },
 
@@ -496,6 +500,7 @@
         '<div class="mp-progress-wrap">' +
           '<div class="mp-progress-bar" id="mp-progress-bar">' +
             '<div class="mp-progress-fill" id="mp-progress-fill"></div>' +
+            '<div class="mp-progress-tooltip" id="mp-progress-tooltip"></div>' +
           '</div>' +
           '<div class="mp-time">' +
             '<span id="mp-time-now">0:00</span>' +
@@ -542,9 +547,10 @@
     $toggle        = el.querySelector('.mp-toggle');
     $panel         = el.querySelector('.mp-panel');
     $title         = el.querySelector('#mp-title');
-    var $artist    = el.querySelector('#mp-artist');
+    $artistEl      = el.querySelector('#mp-artist');
     $progressFill  = el.querySelector('#mp-progress-fill');
     $progressBar   = el.querySelector('#mp-progress-bar');
+    $progressTooltip = el.querySelector('#mp-progress-tooltip');
     $timeNow       = el.querySelector('#mp-time-now');
     $timeTotal     = el.querySelector('#mp-time-total');
     $btnPrev       = el.querySelector('#mp-btn-prev');
@@ -632,7 +638,13 @@
 
   function updateTitle() {
     var tracks = getTracks();
-    $title.textContent = tracks[currentIndex] ? tracks[currentIndex].title : '未选择歌曲';
+    var track = tracks[currentIndex];
+    $title.textContent = track ? track.title : '未选择歌曲';
+    if ($artistEl) {
+      $artistEl.textContent = track && track.artist
+        ? escapeHTML(track.artist) + ' · ' + escapeHTML(CATEGORIES[activeCategory].name)
+        : escapeHTML(CATEGORIES[activeCategory].name);
+    }
   }
 
   function updateVolumeIcon() {
@@ -812,17 +824,26 @@
       audio.currentTime = pct * audio.duration;
     }
     $progressFill.style.width = (pct * 100) + '%';
-    $timeNow.textContent = fmt(audio.duration ? pct * audio.duration : 0);
+    var time = audio.duration ? pct * audio.duration : 0;
+    $timeNow.textContent = fmt(time);
+    if ($progressTooltip) {
+      $progressTooltip.textContent = fmt(time);
+      $progressTooltip.style.left = (pct * 100) + '%';
+      $progressTooltip.classList.add('show');
+    }
   }
 
   function onProgressDown(e) {
     seeking = true;
     seekFromEvent(e);
+    document.body.style.cursor = 'pointer';
     function onMove(ev) { seekFromEvent(ev); }
     function onUp() {
       seeking = false;
       document.removeEventListener('mousemove', onMove);
       document.removeEventListener('mouseup', onUp);
+      document.body.style.cursor = '';
+      if ($progressTooltip) $progressTooltip.classList.remove('show');
     }
     document.addEventListener('mousemove', onMove);
     document.addEventListener('mouseup', onUp);
@@ -836,6 +857,7 @@
       seeking = false;
       document.removeEventListener('touchmove', onMove);
       document.removeEventListener('touchend', onEnd);
+      if ($progressTooltip) $progressTooltip.classList.remove('show');
     }
     document.addEventListener('touchmove', onMove, { passive: false });
     document.addEventListener('touchend', onEnd);
@@ -1084,6 +1106,7 @@
         save();
       }
     },
+    get panelOpen() { return panelOpen; },
   };
 
 })();

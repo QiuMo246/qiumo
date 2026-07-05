@@ -81,7 +81,7 @@
         async loadPost(slug) {
             if (this.state.isLoading) return;
             this.state.isLoading = true;
-            if (this.container) this.container.innerHTML = '';
+            this.renderSkeletonDetail();
 
             try {
                 const res = await fetch(`${API_BASE}/posts?slug=${encodeURIComponent(slug)}`);

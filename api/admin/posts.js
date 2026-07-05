@@ -1,9 +1,25 @@
+const crypto = require('crypto');
 const sb = require('../_supabase');
+
+function verifyToken(token, secret) {
+  try {
+    var decoded = Buffer.from(token, 'base64url').toString();
+    var parts = decoded.split('.');
+    if (parts.length !== 2) return false;
+    var expiry = parts[0], hmac = parts[1];
+    var expected = crypto.createHmac('sha256', secret).update(expiry).digest('hex');
+    if (hmac !== expected) return false;
+    if (Date.now() > Number(expiry)) return false;
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
 
 function verifyAdmin(req) {
   const auth = req.headers.authorization;
   if (!auth || !auth.startsWith('Bearer ')) return false;
-  return auth.slice(7) === process.env.ADMIN_SECRET;
+  return verifyToken(auth.slice(7), process.env.ADMIN_SECRET);
 }
 
 module.exports = async (req, res) => {

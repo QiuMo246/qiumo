@@ -24,6 +24,7 @@
     particles: [],
     mouse: { x: 0, y: 0 },
     animFrame: null,
+    observer: null,
 
     init() {
       this.canvas = $('#heroCanvas');
@@ -32,7 +33,19 @@
       this.resize();
       this.createParticles();
       this.bindEvents();
-      this.animate();
+      this.observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            if (!ParticleCanvas.animFrame) ParticleCanvas.animate();
+          } else {
+            if (ParticleCanvas.animFrame) {
+              cancelAnimationFrame(ParticleCanvas.animFrame);
+              ParticleCanvas.animFrame = null;
+            }
+          }
+        });
+      }, { threshold: 0 });
+      this.observer.observe(this.canvas.parentElement);
     },
 
     resize() {
@@ -318,7 +331,7 @@
      ============================================ */
   const ScrollReveal = {
     init() {
-      const els = $$('.reveal-up, .reveal-left, .reveal-right');
+      const els = $$('.reveal-up, .reveal-left, .reveal-right, .section-label, .section-desc');
       if (!els.length) return;
 
       const observer = new IntersectionObserver(
@@ -330,7 +343,7 @@
             }
           });
         },
-        { threshold: 0.1, rootMargin: '0px 0px -40px 0px' }
+        { threshold: 0.08, rootMargin: '0px 0px -20px 0px' }
       );
 
       els.forEach((el) => observer.observe(el));
@@ -554,32 +567,38 @@
     },
 
     async submit() {
-      // Validate
       const name = $('#formName').value.trim();
       const email = $('#formEmail').value.trim();
       const message = $('#formMessage').value.trim();
 
       if (!name || !email || !message) return;
 
-      // Loading state
       this.submitBtn.classList.add('loading');
       this.submitBtn.disabled = true;
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1800));
+      try {
+        const res = await fetch('https://api.web3forms.com/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, message, access_key: '82a46917-515c-4c66-8999-86e87241e708' })
+        });
 
-      // Success state
-      this.submitBtn.classList.remove('loading');
-      this.submitBtn.classList.add('success');
+        if (!res.ok) throw new Error('发送失败');
 
-      Toast.show('消息发送成功！我会尽快回复你。', 'success');
+        this.submitBtn.classList.remove('loading');
+        this.submitBtn.classList.add('success');
+        Toast.show('消息发送成功！我会尽快回复你。', 'success');
 
-      // Reset after delay
-      setTimeout(() => {
-        this.form.reset();
-        this.submitBtn.classList.remove('success');
+        setTimeout(() => {
+          this.form.reset();
+          this.submitBtn.classList.remove('success');
+          this.submitBtn.disabled = false;
+        }, 2500);
+      } catch (err) {
+        this.submitBtn.classList.remove('loading');
         this.submitBtn.disabled = false;
-      }, 2500);
+        Toast.show('发送失败，请稍后重试', 'error');
+      }
     },
   };
 
@@ -678,6 +697,71 @@
   };
 
   /* ============================================
+     MODULE: Scroll Progress Bar
+     ============================================ */
+  const ScrollProgress = {
+    bar: null,
+    init() {
+      this.bar = document.createElement('div');
+      this.bar.className = 'scroll-progress';
+      document.body.prepend(this.bar);
+      window.addEventListener('scroll', this.onScroll.bind(this), { passive: true });
+      this.onScroll();
+    },
+    onScroll() {
+      const h = document.documentElement;
+      const pct = (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100;
+      this.bar.style.transform = `scaleX(${pct / 100})`;
+    },
+  };
+
+  /* ============================================
+     MODULE: Back to Top
+     ============================================ */
+  const BackToTop = {
+    btn: null,
+
+    init() {
+      this.btn = $('#backToTop');
+      if (!this.btn) return;
+      window.addEventListener('scroll', this.onScroll.bind(this), { passive: true });
+      this.btn.addEventListener('click', function () {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+      this.onScroll();
+    },
+
+    onScroll() {
+      if (window.scrollY > 400) {
+        this.btn.classList.add('visible');
+      } else {
+        this.btn.classList.remove('visible');
+      }
+    },
+  };
+
+  /* ============================================
+     MODULE: Hero Parallax
+     ============================================ */
+  const HeroParallax = {
+    init() {
+      this.hero = $('#hero');
+      this.content = $('.hero-content');
+      this.canvas = $('#heroCanvas');
+      if (!this.hero) return;
+      window.addEventListener('scroll', this.onScroll.bind(this), { passive: true });
+    },
+    onScroll() {
+      const st = window.scrollY;
+      const heroH = this.hero.offsetHeight;
+      if (st > heroH) return;
+      const pct = st / heroH;
+      if (this.content) this.content.style.transform = `translateY(${pct * 40}px)`;
+      if (this.canvas) this.canvas.style.transform = `translateY(${pct * -20}px)`;
+    },
+  };
+
+  /* ============================================
      INITIALIZE ALL MODULES
      ============================================ */
   function init() {
@@ -687,6 +771,9 @@
     Navigation.init();
     ScrollReveal.init();
     CounterAnimation.init();
+    ScrollProgress.init();
+    BackToTop.init();
+    HeroParallax.init();
     CardTilt.init();
     RippleEffect.init();
     Modal.init();

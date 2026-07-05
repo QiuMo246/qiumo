@@ -7,7 +7,7 @@ export async function onRequest(context) {
         return new Response(null, { status: 204, headers: corsHeaders() });
     }
 
-    if (!checkAdminAuth(req, context.env)) {
+    if (!await checkAdminAuth(req, context.env)) {
         return jsonResponse({ error: '未授权' }, 401);
     }
 
@@ -43,10 +43,28 @@ export async function onRequest(context) {
     }
 }
 
-function checkAdminAuth(req, env) {
+async function verifyToken(token, secret) {
+    try {
+        var decoded = atob(token);
+        var parts = decoded.split('.');
+        if (parts.length !== 2) return false;
+        var expiry = parts[0], hmac = parts[1];
+        var enc = new TextEncoder();
+        var key = await crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+        var sig = await crypto.subtle.sign('HMAC', key, enc.encode(expiry));
+        var expected = Array.from(new Uint8Array(sig)).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+        if (hmac !== expected) return false;
+        if (Date.now() > Number(expiry)) return false;
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
+async function checkAdminAuth(req, env) {
     const auth = req.headers.get('Authorization');
     if (!auth || !auth.startsWith('Bearer ')) return false;
-    return auth.slice(7) === env.ADMIN_SECRET;
+    return await verifyToken(auth.slice(7), env.ADMIN_SECRET);
 }
 
 function supabaseHeaders(env) {

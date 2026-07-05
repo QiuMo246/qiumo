@@ -178,7 +178,6 @@
   border-radius: 4px;
   cursor: pointer;
   position: relative;
-  overflow: hidden;
 }
 
 .mp-progress-bar:hover {
@@ -210,6 +209,26 @@
 
 .mp-progress-bar:hover .mp-progress-fill::after {
   transform: translateY(-50%) scale(1);
+}
+
+.mp-progress-tooltip {
+  position: absolute;
+  bottom: 16px;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  font-size: 0.65rem;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  padding: 2px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.mp-progress-tooltip.show {
+  opacity: 1;
 }
 
 .mp-time {

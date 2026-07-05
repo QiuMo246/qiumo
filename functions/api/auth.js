@@ -1,3 +1,13 @@
+async function createToken(secret) {
+    var expiry = Date.now() + 24 * 60 * 60 * 1000;
+    var payload = String(expiry);
+    var enc = new TextEncoder();
+    var key = await crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+    var sig = await crypto.subtle.sign('HMAC', key, enc.encode(payload));
+    var hmac = Array.from(new Uint8Array(sig)).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+    return btoa(payload + '.' + hmac);
+}
+
 export async function onRequest(context) {
     const req = context.request;
 
@@ -12,7 +22,8 @@ export async function onRequest(context) {
         const { password } = await req.json();
         if (!password) return jsonResponse({ error: '请输入密码' }, 400);
         if (password === context.env.ADMIN_SECRET) {
-            return jsonResponse({ success: true, token: context.env.ADMIN_SECRET });
+            var token = await createToken(context.env.ADMIN_SECRET);
+            return jsonResponse({ success: true, token: token });
         }
         return jsonResponse({ error: '密码错误' }, 401);
     } catch (err) {
