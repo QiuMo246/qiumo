@@ -783,6 +783,7 @@
     SecretAdmin.init();
     if (window.Blog) window.Blog.init();
     if (window.Admin) window.Admin.init();
+    if (window.AIChat) window.AIChat.init();
   }
 
   // Run on DOM ready

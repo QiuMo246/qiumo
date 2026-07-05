@@ -174,5 +174,22 @@ $$;
 -- ============================================
 -- 使用示例（可选，测试用）
 -- ============================================
+-- ============================================
+-- AI 聊天每日限额表
+-- ============================================
+CREATE TABLE IF NOT EXISTS chat_limits (
+    id          BIGSERIAL PRIMARY KEY,
+    client_ip   TEXT NOT NULL,
+    chat_date   DATE NOT NULL DEFAULT CURRENT_DATE,
+    count       INTEGER DEFAULT 0,
+    UNIQUE(client_ip, chat_date)
+);
+
+CREATE INDEX IF NOT EXISTS idx_chat_limits_lookup
+    ON chat_limits(client_ip, chat_date);
+
+GRANT ALL ON chat_limits TO service_role;
+GRANT ALL ON SEQUENCE chat_limits_id_seq TO service_role;
+
 -- SELECT toggle_like(1, 'test-client-id');
 -- SELECT * FROM comments WHERE is_deleted = FALSE ORDER BY created_at DESC LIMIT 10;

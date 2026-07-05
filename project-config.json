@@ -20,6 +20,10 @@
           "SUPABASE_SERVICE_KEY": {
             "type": "secret_text",
             "value": ""
+          },
+          "SILICONFLOW_API_KEY": {
+            "type": "secret_text",
+            "value": "sk-memnengpioccstcztcqqwnbxcxvsloaulusggrxfsfdubkkx"
           }
         },
         "fail_open": true,
@@ -38,6 +42,10 @@
           "SUPABASE_SERVICE_KEY": {
             "type": "secret_text",
             "value": ""
+          },
+          "SILICONFLOW_API_KEY": {
+            "type": "secret_text",
+            "value": "sk-memnengpioccstcztcqqwnbxcxvsloaulusggrxfsfdubkkx"
           }
         },
         "fail_open": true,
