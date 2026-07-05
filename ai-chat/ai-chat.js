@@ -3,8 +3,16 @@
 
   const API_ENDPOINT = '/api/chat';
   const MAX_HISTORY = 10;
+  const STORAGE_KEY = 'qiumo_ai_model';
+
+  const MODELS = [
+    { key: 'siliconflow', label: '通义千问 (Qwen3-8B)' },
+    { key: 'relay', label: 'Claude Opus 4.5' },
+  ];
+
   let messages = [];
   let isStreaming = false;
+  let currentModel = localStorage.getItem(STORAGE_KEY) || 'siliconflow';
 
   const $ = (sel, ctx) => (ctx || document).querySelector(sel);
   const $$ = (sel, ctx) => [...(ctx || document).querySelectorAll(sel)];
@@ -21,6 +29,11 @@
     return e;
   }
 
+  function getModelLabel(key) {
+    const m = MODELS.find(m => m.key === key);
+    return m ? m.label : key;
+  }
+
   const AIChat = {
     container: null,
     messagesEl: null,
@@ -28,6 +41,7 @@
     sendBtn: null,
     countEl: null,
     remainingEl: null,
+    modelSelect: null,
 
     init() {
       this.container = $('#chatContainer');
@@ -37,10 +51,26 @@
       this.sendBtn = $('#chatSendBtn');
       this.countEl = $('#chatCount');
       this.remainingEl = $('#chatRemaining');
+      this.modelSelect = $('#chatModelSelect');
 
+      this.renderModelSelector();
       this.bindEvents();
       this.loadRemaining();
       this.addWelcomeMessage();
+    },
+
+    renderModelSelector() {
+      const wrapper = $('#chatModelWrapper');
+      wrapper.innerHTML = '';
+      const select = el('select', { className: 'chat-model-select', id: 'chatModelSelect' });
+      MODELS.forEach(m => {
+        const opt = el('option', { value: m.key });
+        opt.textContent = m.label;
+        if (m.key === currentModel) opt.selected = true;
+        select.appendChild(opt);
+      });
+      wrapper.appendChild(select);
+      this.modelSelect = select;
     },
 
     bindEvents() {
@@ -55,6 +85,19 @@
         this.input.style.height = 'auto';
         this.input.style.height = Math.min(this.input.scrollHeight, 120) + 'px';
       });
+      document.addEventListener('change', (e) => {
+        if (e.target.id === 'chatModelSelect') {
+          currentModel = e.target.value;
+          localStorage.setItem(STORAGE_KEY, currentModel);
+          this.clearChat();
+        }
+      });
+    },
+
+    clearChat() {
+      messages = [];
+      this.messagesEl.innerHTML = '';
+      this.addWelcomeMessage();
     },
 
     async loadRemaining() {
@@ -80,7 +123,7 @@
     },
 
     addWelcomeMessage() {
-      this.addMessage('assistant', '你好！我是 AI 助手，有什么可以帮你的吗？');
+      this.addMessage('assistant', '你好！我是 ' + getModelLabel(currentModel) + '，有什么可以帮你的吗？');
     },
 
     addMessage(role, content) {
@@ -156,7 +199,10 @@
         const res = await fetch(API_ENDPOINT, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messages: messages.slice(-MAX_HISTORY) }),
+          body: JSON.stringify({
+            model: currentModel,
+            messages: messages.slice(-MAX_HISTORY),
+          }),
         });
 
         if (!res.ok) {

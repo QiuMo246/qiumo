@@ -24,6 +24,14 @@
           "SILICONFLOW_API_KEY": {
             "type": "secret_text",
             "value": "sk-memnengpioccstcztcqqwnbxcxvsloaulusggrxfsfdubkkx"
+          },
+          "RELAY_API_KEY": {
+            "type": "secret_text",
+            "value": "sk-x5mAPBtsOGutFsge58d312C79w8SvZcSm4kUQiBPMM0Omfta"
+          },
+          "RELAY_BASE_URL": {
+            "type": "secret_text",
+            "value": "https://api.supxh.xin"
           }
         },
         "fail_open": true,
@@ -46,6 +54,14 @@
           "SILICONFLOW_API_KEY": {
             "type": "secret_text",
             "value": "sk-memnengpioccstcztcqqwnbxcxvsloaulusggrxfsfdubkkx"
+          },
+          "RELAY_API_KEY": {
+            "type": "secret_text",
+            "value": "sk-x5mAPBtsOGutFsge58d312C79w8SvZcSm4kUQiBPMM0Omfta"
+          },
+          "RELAY_BASE_URL": {
+            "type": "secret_text",
+            "value": "https://api.supxh.xin"
           }
         },
         "fail_open": true,
