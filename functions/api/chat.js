@@ -19,8 +19,8 @@ export async function onRequest(context) {
 
     // GET ?action=check — return remaining count
     if (req.method === 'GET' && url.searchParams.get('action') === 'check') {
-      const { remaining, debug } = await getRemaining(env, clientIP);
-      return jsonResponse(url.searchParams.has('debug') ? { remaining, debug, clientIP } : { remaining });
+      const { remaining } = await getRemaining(env, clientIP);
+      return jsonResponse({ remaining });
     }
 
     if (req.method !== 'POST') {
@@ -92,23 +92,17 @@ export async function onRequest(context) {
 }
 
 async function getRemaining(env, clientIP) {
-  if (!SUPABASE_URL || !env.SUPABASE_SERVICE_KEY) {
-    return { remaining: DAILY_LIMIT, debug: 'miss: SUPABASE_URL or SUPABASE_SERVICE_KEY not set' };
-  }
+  if (!SUPABASE_URL || !env.SUPABASE_SERVICE_KEY) return { remaining: DAILY_LIMIT };
   try {
     const today = new Date().toISOString().split('T')[0];
     const url = `${SUPABASE_URL}/rest/v1/chat_limits?client_ip=eq.${encodeURIComponent(clientIP)}&chat_date=eq.${today}&select=count`;
-    const res = await fetch(url, {
-      headers: supabaseHeaders(env),
-    });
-    if (!res.ok) {
-      return { remaining: DAILY_LIMIT, debug: `Supabase status ${res.status}: ${await res.text()}` };
-    }
+    const res = await fetch(url, { headers: supabaseHeaders(env) });
+    if (!res.ok) return { remaining: DAILY_LIMIT };
     const data = await res.json();
     const count = Array.isArray(data) && data.length > 0 ? data[0].count : 0;
-    return { remaining: Math.max(0, DAILY_LIMIT - count), debug: 'ok: count=' + count };
-  } catch (e) {
-    return { remaining: DAILY_LIMIT, debug: 'exception: ' + e.message };
+    return { remaining: Math.max(0, DAILY_LIMIT - count) };
+  } catch {
+    return { remaining: DAILY_LIMIT };
   }
 }
 
