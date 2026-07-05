@@ -4,7 +4,7 @@ const DAILY_LIMIT = 20;
 const MODELS = {
   siliconflow: {
     name: '通义千问 (Qwen3-8B)',
-    baseUrl: 'https://api.siliconflow.cn/v1',
+    baseUrl: 'https://api.siliconflow.cn',
     modelId: 'Qwen/Qwen3-8B',
     apiKeyEnv: 'SILICONFLOW_API_KEY',
   },
@@ -72,7 +72,7 @@ export async function onRequest(context) {
       temperature: 0.7,
     });
 
-    const aiRes = await fetch(baseUrl.replace(/\/+$/, '') + '/chat/completions', {
+    const aiRes = await fetch(baseUrl.replace(/\/+$/, '') + '/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
