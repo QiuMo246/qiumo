@@ -4,19 +4,22 @@ const DAILY_LIMIT = 20;
 const MODELS = {
   siliconflow: {
     name: '通义千问 (Qwen3-8B)',
-    baseUrl: 'https://api.siliconflow.cn',
+    baseUrl: 'https://api.siliconflow.cn/v1',
+    path: '/chat/completions',
     modelId: 'Qwen/Qwen3-8B',
     apiKeyEnv: 'SILICONFLOW_API_KEY',
   },
   zhipu: {
     name: '智谱 GLM-4-Flash',
     baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
+    path: '/chat/completions',
     modelId: 'GLM-4-Flash',
     apiKeyEnv: 'ZHIPU_API_KEY',
   },
   relay: {
     name: 'Claude Opus 4.5',
     baseUrl: null,
+    path: '/v1/chat/completions',
     modelId: 'claude-opus-4-5',
     apiKeyEnv: 'RELAY_API_KEY',
   },
@@ -78,7 +81,7 @@ export async function onRequest(context) {
       temperature: 0.7,
     });
 
-    const aiRes = await fetch(baseUrl.replace(/\/+$/, '') + '/v1/chat/completions', {
+    const aiRes = await fetch(baseUrl.replace(/\/+$/, '') + (cfg.path || '/v1/chat/completions'), {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
