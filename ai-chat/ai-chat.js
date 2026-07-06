@@ -6,14 +6,14 @@
   const STORAGE_KEY = 'qiumo_ai_model';
 
   const MODELS = [
+    { key: 'zhipu', label: '智谱 GLM-4-Flash (永久免费)' },
     { key: 'siliconflow', label: '通义千问 (Qwen3-8B)' },
-    { key: 'zhipu', label: '智谱 GLM-4-Flash' },
     { key: 'relay', label: 'Claude Opus 4.5' },
   ];
 
   let messages = [];
   let isStreaming = false;
-  let currentModel = localStorage.getItem(STORAGE_KEY) || 'siliconflow';
+  let currentModel = localStorage.getItem(STORAGE_KEY) || 'zhipu';
 
   const $ = (sel, ctx) => (ctx || document).querySelector(sel);
   const $$ = (sel, ctx) => [...(ctx || document).querySelectorAll(sel)];
