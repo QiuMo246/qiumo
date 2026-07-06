@@ -7,8 +7,7 @@
 
   const MODELS = [
     { key: 'siliconflow', label: '通义千问 (Qwen3-8B)' },
-    { key: 'deepseek-v4-flash', label: 'DeepSeek V4 Flash' },
-    { key: 'deepseek-v32', label: 'DeepSeek V3.2' },
+    { key: 'zhipu', label: '智谱 GLM-4-Flash' },
     { key: 'relay', label: 'Claude Opus 4.5' },
   ];
 

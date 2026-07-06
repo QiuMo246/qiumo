@@ -8,17 +8,11 @@ const MODELS = {
     modelId: 'Qwen/Qwen3-8B',
     apiKeyEnv: 'SILICONFLOW_API_KEY',
   },
-  'deepseek-v4-flash': {
-    name: 'DeepSeek V4 Flash',
-    baseUrl: 'https://api.siliconflow.cn',
-    modelId: 'deepseek-ai/DeepSeek-V4-Flash',
-    apiKeyEnv: 'SILICONFLOW_API_KEY',
-  },
-  'deepseek-v32': {
-    name: 'DeepSeek V3.2',
-    baseUrl: 'https://api.siliconflow.cn',
-    modelId: 'deepseek-ai/DeepSeek-V3.2',
-    apiKeyEnv: 'SILICONFLOW_API_KEY',
+  zhipu: {
+    name: '智谱 GLM-4-Flash',
+    baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
+    modelId: 'GLM-4-Flash',
+    apiKeyEnv: 'ZHIPU_API_KEY',
   },
   relay: {
     name: 'Claude Opus 4.5',
