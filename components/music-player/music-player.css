@@ -12,9 +12,9 @@
   --mp-text: #f4f4f5;
   --mp-text-secondary: #a1a1aa;
   --mp-text-muted: #52525b;
-  --mp-accent: #6366f1;
-  --mp-accent-glow: rgba(99, 102, 241, 0.3);
-  --mp-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+  --mp-accent: #22d3ee;
+  --mp-accent-glow: rgba(34, 211, 238, 0.3);
+  --mp-gradient: linear-gradient(135deg, #22d3ee 0%, #6a35ff 50%, #d946ef 100%);
   --mp-radius: 16px;
   --mp-radius-sm: 10px;
   --mp-ease: cubic-bezier(0.16, 1, 0.3, 1);

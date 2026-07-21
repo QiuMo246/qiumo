@@ -188,8 +188,9 @@
 }
 
 .chat-message.user .chat-bubble {
-  background: var(--gradient-primary);
-  color: #fff;
+  background: rgba(34, 211, 238, 0.15);
+  border: 1px solid rgba(34, 211, 238, 0.2);
+  color: var(--text-primary);
   border-bottom-right-radius: 4px;
 }
 
@@ -272,9 +273,9 @@
   width: 36px;
   height: 36px;
   border-radius: var(--radius-sm);
-  border: none;
-  background: var(--gradient-primary);
-  color: #fff;
+  border: 1px solid rgba(34, 211, 238, 0.2);
+  background: rgba(34, 211, 238, 0.1);
+  color: var(--cyan);
   cursor: pointer;
   display: flex;
   align-items: center;

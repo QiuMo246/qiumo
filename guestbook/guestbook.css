@@ -190,7 +190,7 @@
     width: 40px;
     height: 40px;
     border-radius: var(--radius-full);
-    background: rgba(99, 102, 241, 0.15);
+    background: rgba(34, 211, 238, 0.1);
     color: var(--accent-blue);
     display: flex;
     align-items: center;
@@ -226,6 +226,7 @@
     background: var(--gradient-primary);
     border-radius: var(--radius-full);
     letter-spacing: 0.02em;
+    color: #fff;
 }
 
 .gb-time {
@@ -343,11 +344,11 @@
 }
 
 .gb-action-btn.liked {
-    color: #ec4899;
+    color: var(--cyan);
 }
 
 .gb-action-btn.liked:hover {
-    background: rgba(236, 72, 153, 0.1);
+    background: rgba(34, 211, 238, 0.1);
 }
 
 .gb-delete-btn:hover {

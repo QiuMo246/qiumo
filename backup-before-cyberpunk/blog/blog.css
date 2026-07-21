@@ -1,0 +1,205 @@
+/* ============================================
+   博客列表与文章详情样式 - blog.css
+   ============================================ */
+
+.blog-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+/* ---- 文章列表 ---- */
+.blog-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 32px;
+    margin-top: 48px;
+}
+
+.blog-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 32px;
+    cursor: pointer;
+    transition: all 0.4s var(--ease-out);
+    position: relative;
+    overflow: hidden;
+}
+
+.blog-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--border-color-hover);
+    background: var(--bg-card-hover);
+    box-shadow: var(--shadow-glow);
+}
+
+.blog-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.8rem;
+    color: var(--text-tertiary);
+    font-family: var(--font-mono);
+    margin-bottom: 12px;
+}
+
+.blog-card-title {
+    font-size: 1.6rem;
+    font-weight: 800;
+    margin-bottom: 12px;
+    color: var(--text-primary);
+    transition: color 0.3s ease;
+}
+
+.blog-card:hover .blog-card-title {
+    color: #fff;
+}
+
+.blog-card-excerpt {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
+
+.blog-card-more {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--accent-blue);
+    transition: gap 0.2s ease;
+}
+
+.blog-card:hover .blog-card-more {
+    gap: 10px;
+}
+
+/* ---- 文章详情 ---- */
+.blog-post-detail {
+    animation: blog-fade-in 0.4s var(--ease-out);
+}
+
+.blog-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 32px;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.blog-back-btn:hover {
+    color: var(--text-primary);
+}
+
+.blog-post-header {
+    margin-bottom: 40px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.blog-post-title {
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 900;
+    line-height: 1.2;
+    margin-bottom: 16px;
+    color: var(--text-primary);
+}
+
+.blog-post-meta {
+    font-size: 0.85rem;
+    color: var(--text-tertiary);
+    font-family: var(--font-mono);
+}
+
+.blog-post-content {
+    color: var(--text-secondary);
+    font-size: 1.05rem;
+    line-height: 1.8;
+}
+
+.blog-post-content p {
+    margin-bottom: 24px;
+}
+
+.blog-post-content h2,
+.blog-post-content h3 {
+    color: var(--text-primary);
+    margin: 40px 0 16px 0;
+    font-weight: 800;
+}
+
+.blog-post-content h2 { font-size: 1.6rem; }
+.blog-post-content h3 { font-size: 1.3rem; }
+
+.blog-post-content strong {
+    color: var(--text-primary);
+}
+
+.blog-post-content pre {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    margin: 24px 0;
+    overflow-x: auto;
+}
+
+.blog-post-content code {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    padding: 3px 6px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+}
+
+.blog-post-content pre code {
+    padding: 0;
+    background: none;
+    font-size: 0.85rem;
+}
+
+.blog-post-content blockquote {
+    border-left: 4px solid var(--accent-blue);
+    padding-left: 20px;
+    margin: 24px 0;
+    font-style: italic;
+    color: var(--text-tertiary);
+}
+
+.blog-post-content img {
+    border-radius: var(--radius-md);
+    margin: 24px auto;
+    max-width: 100%;
+}
+
+.blog-post-content ul,
+.blog-post-content ol {
+    margin-bottom: 24px;
+    padding-left: 24px;
+}
+
+.blog-post-content li {
+    margin-bottom: 8px;
+}
+
+/* ---- 动画 & 骨架屏 ---- */
+@keyframes blog-fade-in {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.blog-skeleton-card {
+    min-height: 200px;
+}
+
+/* ---- 响应式 ---- */
+@media (max-width: 768px) {
+    .blog-card {
+        padding: 24px;
+    }
+}

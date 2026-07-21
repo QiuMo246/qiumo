@@ -68,7 +68,7 @@
     gap: 6px;
     font-size: 0.875rem;
     font-weight: 600;
-    color: var(--accent-blue);
+    color: var(--cyan);
     transition: gap 0.2s ease;
 }
 
