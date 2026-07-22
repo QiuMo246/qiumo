@@ -120,9 +120,9 @@
             }
 
             let html = '<div class="blog-list">';
-            this.state.posts.forEach(post => {
+            this.state.posts.forEach((post, i) => {
                 html += `
-                    <div class="blog-card" data-slug="${post.slug}">
+                    <div class="blog-card" data-slug="${post.slug}" data-reveal="up" data-stagger="${0.1 * i}">
                         <div class="blog-card-meta">
                             <span>发布于 ${formatDate(post.created_at)}</span>
                         </div>

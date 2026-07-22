@@ -397,25 +397,88 @@
      SCROLL REVEAL
      ============================================ */
   const ScrollReveal = {
+    progressBar: null,
+    observer: null,
+
     init() {
-      const els = $$('.sec-label, .sec-title, .sec-desc, .about-text p, .stat-card');
-      if (!els.length) return;
-      const observer = new IntersectionObserver((entries) => {
+      this.createProgressBar();
+      this.createObserver();
+      this.observeAll();
+      this.watchNew();
+      this.initParallax();
+    },
+
+    createProgressBar() {
+      const bar = document.createElement('div');
+      bar.className = 'scroll-progress';
+      document.body.appendChild(bar);
+      this.progressBar = bar;
+
+      window.addEventListener('scroll', () => {
+        const scrollTop = window.scrollY;
+        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        const progress = docHeight > 0 ? scrollTop / docHeight : 0;
+        bar.style.transform = `scaleX(${progress})`;
+      }, { passive: true });
+    },
+
+    createObserver() {
+      this.observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
-            entry.target.style.opacity = '1';
-            entry.target.style.transform = 'translateY(0)';
-            observer.unobserve(entry.target);
+            const el = entry.target;
+            const stagger = el.dataset.stagger;
+            const delay = stagger ? parseFloat(stagger) : 0;
+            setTimeout(() => {
+              el.classList.add('revealed');
+            }, delay * 1000);
+            this.observer.unobserve(el);
           }
         });
-      }, { threshold: 0.08 });
+      }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+    },
 
-      els.forEach(el => {
-        el.style.opacity = '0';
-        el.style.transform = 'translateY(24px)';
-        el.style.transition = 'opacity 0.7s, transform 0.7s';
-        observer.observe(el);
+    observe(el) {
+      const type = el.dataset.reveal || 'up';
+      el.classList.add(`reveal-${type}`);
+      this.observer.observe(el);
+    },
+
+    observeAll() {
+      $$('[data-reveal]').forEach(el => this.observe(el));
+    },
+
+    watchNew() {
+      const content = $('#mainContent');
+      if (!content) return;
+      const mo = new MutationObserver(() => {
+        $$('[data-reveal]').forEach(el => {
+          if (!el.classList.contains('reveal-up') &&
+              !el.classList.contains('reveal-down') &&
+              !el.classList.contains('reveal-left') &&
+              !el.classList.contains('reveal-right') &&
+              !el.classList.contains('reveal-scale') &&
+              !el.classList.contains('reveal-fade')) {
+            this.observe(el);
+          }
+        });
       });
+      mo.observe(content, { childList: true, subtree: true });
+    },
+
+    initParallax() {
+      const sections = $$('.cyber-section');
+      if (!sections.length) return;
+
+      window.addEventListener('scroll', () => {
+        sections.forEach(section => {
+          const rect = section.getBoundingClientRect();
+          const center = rect.top + rect.height / 2;
+          const viewportCenter = window.innerHeight / 2;
+          const offset = (center - viewportCenter) * 0.05;
+          section.style.setProperty('--parallax-offset', `${offset}px`);
+        });
+      }, { passive: true });
     },
   };
 

@@ -566,7 +566,7 @@
     // ============================================
     // ---- 渲染评论 ----
     // ============================================
-    function renderComment(comment, isReply = false) {
+    function renderComment(comment, isReply = false, commentIndex = 0) {
         const own        = isOwnComment(comment);
         const initial    = (comment.nickname || '?')[0];
         const authorName = '秋末';
@@ -576,8 +576,10 @@
 
         const avatarBg = isAuthor ? 'background: var(--gradient-primary)' : '';
 
+        const stagger = isReply ? 0 : Math.min((commentIndex || 0) * 0.1, 0.7);
+
         let html = `
-            <div class="gb-card ${isReply ? 'gb-reply-card' : ''}" data-id="${comment.id}">
+            <div class="gb-card ${isReply ? 'gb-reply-card' : ''}" data-id="${comment.id}" data-reveal="up" data-stagger="${stagger}">
                 <div class="gb-card-header">
                     <div class="gb-avatar" style="${avatarBg}">
                         ${escapeHtml(initial)}
@@ -818,8 +820,8 @@
                 if (data.comments.length === 0 && reset) {
                     this.listEl.innerHTML = renderEmpty();
                 } else {
-                    data.comments.forEach(c => {
-                        this.listEl.insertAdjacentHTML('beforeend', renderComment(c));
+                    data.comments.forEach((c, i) => {
+                        this.listEl.insertAdjacentHTML('beforeend', renderComment(c, false, i));
                     });
                 }
 
@@ -833,8 +835,8 @@
                 const cached = Cache.get(this.state.sort);
                 if (cached && reset) {
                     this.listEl.innerHTML = '';
-                    cached.comments.forEach(c => {
-                        this.listEl.insertAdjacentHTML('beforeend', renderComment(c));
+                    cached.comments.forEach((c, i) => {
+                        this.listEl.insertAdjacentHTML('beforeend', renderComment(c, false, i));
                     });
                     this.countEl.textContent = `${cached.total} 条留言（缓存）`;
                     showToast('网络异常，显示上次缓存的评论', 'info');
