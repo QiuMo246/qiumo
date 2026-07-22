@@ -133,12 +133,14 @@ input, textarea { font-family: inherit; font-size: inherit; }
 
 /* Entry Left - Character */
 .entry-left {
+  position: relative;
   width: 50%;
   background: linear-gradient(180deg, rgba(15,23,42,0.3) 0%, rgba(30,41,59,0.5) 100%);
   display: flex;
   align-items: flex-end;
   justify-content: center;
   padding-bottom: 20px;
+  overflow: hidden;
 }
 .entry-character {
   position: relative;
@@ -208,33 +210,27 @@ input, textarea { font-family: inherit; font-size: inherit; }
 .char-arm-l { left: -10px; transform: rotate(15deg); }
 .char-arm-r { right: -10px; transform: rotate(-15deg); }
 
-/* Visualizer bars */
-.char-visualizer {
-  position: absolute;
-  top: -10px;
-  right: -40px;
+/* Equalizer — horizontal stage at character's feet */
+.entry-eq {
+  position: relative;
+  width: 80%;
+  height: 36px;
   display: flex;
   align-items: flex-end;
-  gap: 4px;
-  height: 120px;
+  justify-content: center;
+  gap: 3px;
+  z-index: 1;
+  margin-top: 2px;
 }
-.vis-bar {
-  width: 6px;
+.entry-eq .vis-bar {
+  flex: 1;
+  max-width: 10px;
+  min-height: 3px;
+  border-radius: 2px 2px 0 0;
   background: linear-gradient(to top, var(--cyan), var(--purple));
-  border-radius: 3px 3px 0 0;
-  animation: vis-bounce 1.2s ease-in-out infinite;
-}
-.vis-bar:nth-child(1) { animation-delay: 0s; }
-.vis-bar:nth-child(2) { animation-delay: 0.15s; }
-.vis-bar:nth-child(3) { animation-delay: 0.3s; }
-.vis-bar:nth-child(4) { animation-delay: 0.45s; }
-.vis-bar:nth-child(5) { animation-delay: 0.1s; }
-.vis-bar:nth-child(6) { animation-delay: 0.25s; }
-.vis-bar:nth-child(7) { animation-delay: 0.4s; }
-.vis-bar:nth-child(8) { animation-delay: 0.55s; }
-@keyframes vis-bounce {
-  0%, 100% { transform: scaleY(1); }
-  50% { transform: scaleY(0.6); }
+  opacity: 0.6;
+  box-shadow: 0 0 6px rgba(34, 211, 238, 0.2);
+  transition: height 0.05s ease;
 }
 
 /* Entry Right - Form */
@@ -1226,8 +1222,8 @@ input, textarea { font-family: inherit; font-size: inherit; }
   .char-arm { width: 20px; height: 70px; }
   .char-arm-l { left: -5px; }
   .char-arm-r { right: -5px; }
-  .char-visualizer { right: -30px; height: 80px; }
-  .vis-bar { width: 4px; }
+  .entry-eq { width: 90%; height: 28px; gap: 2px; }
+  .entry-eq .vis-bar { max-width: 8px; }
   .entry-right { width: 100%; padding: 30px 24px; }
   .sidebar { width: 220px; padding: 24px 16px; }
   .main-content { padding: 24px; }

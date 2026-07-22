@@ -502,15 +502,30 @@
      VISUALIZER ANIMATION
      ============================================ */
   const Visualizer = {
+    bars: [],
+    count: 24,
     init() {
-      const bars = $$('.vis-bar');
-      if (!bars.length) return;
-      setInterval(() => {
-        bars.forEach(bar => {
-          const h = Math.floor(Math.random() * 60) + 20;
-          bar.style.height = h + '%';
+      const container = document.getElementById('entryEq');
+      if (!container) return;
+      for (let i = 0; i < this.count; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'vis-bar';
+        container.appendChild(bar);
+      }
+      this.bars = container.querySelectorAll('.vis-bar');
+      this._animate();
+    },
+    _animate() {
+      const loop = () => {
+        const t = performance.now() / 1000;
+        this.bars.forEach((bar, i) => {
+          const phase = i / this.bars.length;
+          const h = 18 + Math.sin(t * 2.8 + phase * Math.PI * 2) * 45 + Math.sin(t * 1.4 + phase * Math.PI * 4) * 18;
+          bar.style.height = Math.max(8, Math.min(100, h)) + '%';
         });
-      }, 600);
+        requestAnimationFrame(loop);
+      };
+      loop();
     },
   };
 
