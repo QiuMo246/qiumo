@@ -9,68 +9,66 @@ echo.
 :: --- Auto-detect system proxy ---
 set "GIT_PROXY="
 for /f "tokens=2" %%a in ('netsh winhttp show proxy ^| findstr "代理服务器 Proxy"') do (
-    if not "%%a"=="" (
-        set "GIT_PROXY=%%a"
-    )
+    if not "%%a"=="" set "GIT_PROXY=%%a"
 )
 if "%GIT_PROXY%"=="" (
     for /f "tokens=4 delims= " %%a in ('netsh winhttp show proxy ^| findstr "Proxy"') do (
         if not "%%a"=="" set "GIT_PROXY=%%a"
     )
 )
-:: Also check environment proxy vars
 if "%GIT_PROXY%"=="" set "GIT_PROXY=%http_proxy%"
 if "%GIT_PROXY%"=="" set "GIT_PROXY=%HTTPS_PROXY%"
 
 if not "%GIT_PROXY%"=="" (
     echo [INFO] Detected proxy: %GIT_PROXY%
-    git config http.proxy "%GIT_PROXY%"
-    git config https.proxy "%GIT_PROXY%"
+    :: Environment variables are needed for Windows schannel to work
+    set "HTTP_PROXY=%GIT_PROXY%"
+    set "HTTPS_PROXY=%GIT_PROXY%"
+    :: Also set git config as fallback
+    git config http.proxy "%GIT_PROXY%" 2>nul
+    git config https.proxy "%GIT_PROXY%" 2>nul
 ) else (
     echo [INFO] No system proxy detected
-    :: Remove any stale proxy config
+    set "HTTP_PROXY="
+    set "HTTPS_PROXY="
     git config --unset http.proxy 2>nul
     git config --unset https.proxy 2>nul
 )
 
 :: --- Commit ---
-set "HAS_CHANGES=1"
 git diff --quiet
-if not errorlevel 1 set "HAS_CHANGES=0"
+if errorlevel 1 goto :has_changes
 git diff --cached --quiet
-if not errorlevel 1 (
-    if "%HAS_CHANGES%"=="0" set "HAS_CHANGES=0"
-) else (
-    set "HAS_CHANGES=1"
-)
+if errorlevel 1 goto :has_changes
 
-if "%HAS_CHANGES%"=="1" (
-    git add .
-    git commit -m "deploy: %date% %time%"
-    if errorlevel 1 (
-        echo [ERROR] git commit failed
-        pause
-        exit /b 1
-    )
-) else (
-    echo [INFO] No changes to commit
+echo [INFO] No changes to commit
+goto :push
+
+:has_changes
+git add .
+git commit -m "deploy: %date% %time%"
+if errorlevel 1 (
+    echo [ERROR] git commit failed
+    pause
+    exit /b 1
 )
 
 :: --- Push ---
+:push
 echo.
 echo [1/2] Pushing static site to GitHub...
 git push
 if errorlevel 1 (
     echo.
-    echo [ERROR] git push failed - trying proxy fallback...
-    if "%GIT_PROXY%"=="" (
-        echo [HINT] Your network may need a proxy. Try:
-        echo   git config http.proxy http://127.0.0.1:PORT
-        echo   git config https.proxy http://127.0.0.1:PORT
-        echo   ^(Replace PORT with your proxy port, e.g. 7890, 7897, 10809^)
+    echo [ERROR] git push failed
+    if not "%GIT_PROXY%"=="" (
+        echo [HINT] Proxy was set to "%GIT_PROXY%" but still failed.
+        echo        Your proxy may need authentication or a different port.
     ) else (
-        echo [HINT] Proxy "%GIT_PROXY%" was configured but still failed.
-        echo        Check if the proxy address is correct.
+        echo [HINT] If you use a proxy, try setting it manually:
+        echo   set HTTP_PROXY=http://127.0.0.1:PORT
+        echo   set HTTPS_PROXY=http://127.0.0.1:PORT
+        echo   git push
     )
     pause
     exit /b 1
